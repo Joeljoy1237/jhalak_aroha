@@ -12,8 +12,8 @@ export default function Navbar() {
       gsap.from(navRef.current, {
         y: -100,
         opacity: 0,
-        duration: 1,
-        ease: "power3.out",
+        duration: 1.2,
+        ease: "power4.out",
         delay: 0.2,
       });
     }, navRef);
@@ -26,19 +26,24 @@ export default function Navbar() {
       ref={navRef}
       className="fixed top-6 left-0 right-0 z-50 flex justify-center px-4"
     >
-      <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-full px-8 py-3 flex items-center shadow-2xl transition-all duration-300 hover:border-[#BA170D]/30 hover:shadow-[#BA170D]/20">
-        {/* Logo */}
-        <Link
-          href="/"
-          className="text-xl font-cinzel font-bold tracking-tighter shrink-0 hover:scale-105 transition-transform duration-300 flex items-center gap-1 group"
-        >
-          <span className="text-white group-hover:text-gray-200 transition-colors">
-            JHALAK
-          </span>
-          <span className="text-[#BA170D] group-hover:drop-shadow-[0_0_8px_rgba(186,23,13,0.8)]">
-            .
-          </span>
-        </Link>
+      <div className="relative group">
+        {/* Animated Gradient Border */}
+        <div className="absolute -inset-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-sm"></div>
+
+        <div className="relative bg-[#0A0A0A]/60 backdrop-blur-md border border-white/10 rounded-full px-8 py-3 flex items-center shadow-2xl transition-all duration-300 hover:border-white/20 hover:bg-[#0A0A0A]/80">
+          {/* Logo */}
+          <Link
+            href="/"
+            className="text-xl font-cinzel font-bold tracking-tighter shrink-0 hover:scale-105 transition-transform duration-300 flex items-center gap-1 group/logo"
+          >
+            <span className="text-white group-hover/logo:text-gray-200 transition-colors">
+              JHALAK
+            </span>
+            <span className="text-[#BA170D] group-hover/logo:drop-shadow-[0_0_8px_rgba(186,23,13,0.8)]">
+              .
+            </span>
+          </Link>
+        </div>
       </div>
     </nav>
   );

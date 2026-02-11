@@ -116,11 +116,11 @@ export default function Hero() {
         {/* Main Title - Centered & Huge - MOVED TO BACK (z-0) */}
         <div
           ref={titleWrapperRef}
-          className="absolute inset-0 flex items-center justify-center z-0 pointer-events-none"
+          className="absolute inset-0 flex items-start pt-28 md:pt-0 md:items-center justify-center z-0 pointer-events-none"
         >
           <div className="relative flex items-center justify-center">
             {/* Main Text Layer - High Contrast - Behind Image */}
-            <h1 className="relative text-[18vw] md:text-[22vw] leading-none font-cinzel font-black text-white bg-clip-text bg-gradient-to-b from-[#ffffff] via-[#e2e2e2] to-[#555555] drop-shadow-[0_0_50px_rgba(255,255,255,0.1)] opacity-20 md:opacity-40">
+            <h1 className="relative text-[20vw] md:text-[22vw] leading-none font-cinzel font-black text-white bg-clip-text bg-gradient-to-b from-[#ffffff] via-[#e2e2e2] to-[#555555] drop-shadow-[0_0_50px_rgba(255,255,255,0.1)] opacity-30 md:opacity-40">
               {titleText.split("").map((char, index) => (
                 <span key={index} className="char inline-block origin-bottom">
                   {char}
@@ -135,7 +135,7 @@ export default function Hero() {
           ref={imageRef}
           className="absolute inset-0 z-10 flex items-end justify-center pointer-events-none"
         >
-          <div className="relative w-full h-[70%] md:h-[90%] max-w-[1200px]">
+          <div className="relative w-full h-[55%] md:h-[90%] max-w-[1200px]">
             <Image
               src="/dance.png"
               alt="AROHA Dancer"
@@ -144,20 +144,32 @@ export default function Hero() {
               priority
             />
             {/* Gradient Overlay at bottom to blend image feet */}
-            <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#0A0A0A] to-transparent"></div>
+            <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#0A0A0A] via-[#0A0A0A]/60 to-transparent"></div>
           </div>
         </div>
 
         {/* Subtext - OVERLAY (z-20) */}
-        <div className="absolute bottom-[20%] z-20 overflow-hidden">
+        <div className="absolute top-[30vh] md:top-auto bottom-auto md:bottom-[20%] z-20 overflow-hidden flex flex-col items-center gap-6">
           <p
             ref={subTextRef}
-            className="text-white text-sm md:text-xl tracking-[0.4em] font-light uppercase text-center drop-shadow-md"
+            className="text-white text-sm md:text-xl tracking-[0.4em] font-light uppercase text-center drop-shadow-md px-4"
           >
             <span className="text-[#BA170D] font-bold text-lg">"</span> Unleash
             the Rhythm Within{" "}
             <span className="text-[#BA170D] font-bold text-lg">"</span>
           </p>
+
+          <a
+            href="https://www.graburpass.com/e/S6wHPW"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-8 py-3 rounded-full border border-[#BA170D] text-white font-cinzel text-sm tracking-widest hover:bg-[#BA170D] hover:text-white transition-all duration-300 backdrop-blur-sm bg-black/30 group flex items-center gap-2"
+          >
+            Register Now
+            <span className="group-hover:translate-x-1 transition-transform">
+              →
+            </span>
+          </a>
         </div>
 
         {/* Scroll Indicator */}
