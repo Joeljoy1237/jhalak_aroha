@@ -1,15 +1,28 @@
+"use client";
+
+import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import About from "@/components/About";
 import ArohaRules from "@/components/ArohaRules";
 import JhalakEvents from "@/components/JhalakEvents";
+import ChiefGuests from "@/components/ChiefGuests";
 import Footer from "@/components/Footer";
+import SplashScreen from "@/components/SplashScreen";
+import { AnimatePresence } from "framer-motion";
 
 export default function Home() {
+  const [isLoading, setIsLoading] = useState(true);
+
   return (
     <main className="bg-[#0A0A0A] min-h-screen text-white overflow-hidden selection:bg-[#BA170D] selection:text-white">
+      <AnimatePresence mode="wait">
+        {isLoading && <SplashScreen onComplete={() => setIsLoading(false)} />}
+      </AnimatePresence>
+
       <Navbar />
-      <Hero />
+      <Hero startAnimation={!isLoading} />
+      <ChiefGuests />
       <About />
 
       {/* Event Rules */}
@@ -17,6 +30,8 @@ export default function Home() {
 
       {/* Internal Events */}
       <JhalakEvents />
+
+      {/* Chief Guests & Judges */}
 
       <Footer />
     </main>

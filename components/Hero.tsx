@@ -1,22 +1,31 @@
 "use client";
 
-import { useRef, useLayoutEffect } from "react";
+import { useRef, useLayoutEffect, useEffect } from "react";
 import Image from "next/image";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 gsap.registerPlugin(ScrollTrigger);
 
-export default function Hero() {
+interface HeroProps {
+  startAnimation: boolean;
+}
+
+export default function Hero({ startAnimation }: HeroProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const titleWrapperRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLDivElement>(null);
   const subTextRef = useRef<HTMLParagraphElement>(null);
   const decorativeRef = useRef<HTMLDivElement>(null);
+  const tlRef = useRef<gsap.core.Timeline | null>(null);
 
   useLayoutEffect(() => {
     const ctx = gsap.context(() => {
-      const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+      const tl = gsap.timeline({
+        defaults: { ease: "power3.out" },
+        paused: true,
+      });
+      tlRef.current = tl;
 
       // Initial State Setups
       gsap.set(".char", { yPercent: 100, opacity: 0 });
@@ -93,6 +102,12 @@ export default function Hero() {
     return () => ctx.revert();
   }, []);
 
+  useEffect(() => {
+    if (startAnimation && tlRef.current) {
+      tlRef.current.play();
+    }
+  }, [startAnimation]);
+
   const titleText = "AROHA";
 
   return (
@@ -105,7 +120,7 @@ export default function Hero() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(30,30,30,1)_0%,rgba(10,10,10,1)_100%)]"></div>
         <div className="absolute top-[-20%] left-[-10%] w-[60vw] h-[60vw] bg-[#BA170D]/5 rounded-full blur-[150px] mix-blend-screen animate-pulse duration-[4s]"></div>
         <div className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] bg-blue-900/5 rounded-full blur-[120px] mix-blend-screen"></div>
-        <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.04]"></div>
+        <div className="absolute inset-0 bg-[url('/noise.svg')] opacity-[0.04]"></div>
       </div>
 
       {/* Grid Pattern */}

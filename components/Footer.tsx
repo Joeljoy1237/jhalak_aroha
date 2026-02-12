@@ -63,7 +63,7 @@ export default function Footer() {
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[60vw] h-[400px] bg-[#BA170D]/5 blur-[120px] rounded-full"></div>
         <div className="absolute bottom-[-20%] right-[-10%] w-[50vw] h-[50vw] bg-blue-900/5 rounded-full blur-[150px] mix-blend-screen"></div>
-        <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.04]"></div>
+        <div className="absolute inset-0 bg-[url('/noise.svg')] opacity-[0.04]"></div>
       </div>
 
       {/* Grid Pattern */}

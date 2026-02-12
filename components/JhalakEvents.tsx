@@ -87,7 +87,7 @@ export default function JhalakEvents() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(30,30,30,1)_0%,rgba(10,10,10,1)_100%)] opacity-80"></div>
         <div className="absolute top-[20%] right-[-10%] w-[40vw] h-[40vw] bg-[#BA170D]/5 rounded-full blur-[120px] mix-blend-screen"></div>
         <div className="absolute bottom-[10%] left-[-10%] w-[30vw] h-[30vw] bg-blue-900/5 rounded-full blur-[100px] mix-blend-screen"></div>
-        <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.04]"></div>
+        <div className="absolute inset-0 bg-[url('/noise.svg')] opacity-[0.04]"></div>
       </div>
 
       {/* Grid Pattern */}

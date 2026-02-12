@@ -7,18 +7,21 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 gsap.registerPlugin(ScrollTrigger);
 
 const rules = [
+  "The event is open to all regular students from Colleges affiliated to recognised Universities / Autonomous Colleges/ Deemed Universities/ Polytechnics only.",
   "A valid college ID is required for registration. Only registered participants will be allowed to perform.",
   "Each team must consist of 6-30 participants.",
   "A maximum of 10 extra team members are allowed (not performing on stage).",
-  "Teams will be given 6-10 minutes to perform. This includes setup time.",
-  "All participants must report by 1:00 PM sharp on the day of the event.",
+  "Teams will be given 6-12 minutes to perform with an additional 3 minutes setup time.",
+  "All participants must report by 1:00 PM sharp on the day of the event. Late arrivals will not be permitted to perform.",
+  "Green rooms will be provided for teams to prepare before their performance.",
   "The music for your performance must be in MP3 format and should be brought on a pen drive.",
   "Use of fire, water, smoke, poppers, or any breakable items is strictly prohibited for safety reasons.",
-  "Performances should maintain modesty and respect for all audiences. Vulgar or inappropriate content will not be tolerated.",
-  "Green rooms will be provided for teams to prepare before their performance.",
-  "The decisions made by the judges will be final and binding.",
-  "The winning team will be awarded a total prize pool of ₹60,000.",
+  "Performances should maintain modesty and respect for all audience. Vulgar or inappropriate content will not be tolerated and it may lead to immediate disqualification.",
+  "Performances must not contain obscene, offensive, or politically provocative content.",
+  "The decisions made by the judges will be final and binding. There will be no re-evaluations of scores.",
+  "The winning teams will be awarded a total prize pool of ₹60,000.",
   "The distribution of the prize money will be announced at the conclusion of the event.",
+  "Misbehavior with judges, organizers, or other participants may lead to immediate disqualification.",
 ];
 
 export default function ArohaRules() {
@@ -63,7 +66,7 @@ export default function ArohaRules() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(30,30,30,1)_0%,rgba(10,10,10,1)_100%)] opacity-80"></div>
         <div className="absolute top-[20%] left-[-10%] w-[35vw] h-[35vw] bg-blue-900/5 rounded-full blur-[120px] mix-blend-screen"></div>
         <div className="absolute bottom-[20%] right-[-10%] w-[35vw] h-[35vw] bg-[#BA170D]/5 rounded-full blur-[120px] mix-blend-screen"></div>
-        <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.04]"></div>
+        <div className="absolute inset-0 bg-[url('/noise.svg')] opacity-[0.04]"></div>
       </div>
 
       {/* Grid Pattern */}

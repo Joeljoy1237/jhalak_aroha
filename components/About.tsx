@@ -92,7 +92,7 @@ export default function About() {
           className="absolute top-[10%] right-[-5%] w-[60vw] h-[60vw] md:w-[40vw] md:h-[40vw] bg-[#BA170D]/10 rounded-full blur-[100px] mix-blend-screen opacity-60"
         ></div>
         <div className="absolute bottom-[-10%] left-[-10%] w-[50vw] h-[50vw] md:w-[40vw] md:h-[40vw] bg-blue-900/10 rounded-full blur-[100px] mix-blend-screen opacity-60"></div>
-        <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.04]"></div>
+        <div className="absolute inset-0 bg-[url('/noise.svg')] opacity-[0.04]"></div>
       </div>
 
       {/* Grid Pattern */}
