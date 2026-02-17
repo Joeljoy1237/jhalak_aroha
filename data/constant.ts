@@ -877,3 +877,7 @@ export const categories: Category[] = [
         ]
     }
 ];
+
+export const DEPARTMENTS = ["CIVIL", "MECH", "EEE", "CSE"];
+export const SEMESTERS = ["S2", "S4", "S6", "S8"];
+export const CSE_SEMESTERS = ["S2 A", "S2 B", "S4 A", "S4 B", "S6", "S8"];

@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import ProfileSkeleton from "@/components/ProfileSkeleton";
 import { fetchUserRegistrations, UserRegistrations } from "@/lib/registrationService";
-import { TeamRegistration, categories } from "@/data/constant";
+import { TeamRegistration, categories, DEPARTMENTS, SEMESTERS, CSE_SEMESTERS } from "@/data/constant";
 import Navbar from "@/components/Navbar";
 import { ArrowLeft, LogOut } from "lucide-react";
 import Toast, { ToastType } from "@/components/ui/Toast";
@@ -62,8 +62,7 @@ const getEventTheme = (title: string) => {
     return { label: "GROUP", type: "TEAM", color: "text-purple-400", bg: "bg-purple-400/10", border: "border-purple-400/20" };
 };
 
-const DEPARTMENTS = ["CIVIL", "MECH", "EEE", "CSE"];
-const SEMESTERS = ["S2", "S4", "S6", "S8"];
+
 const HOUSES = ["Red", "Blue", "Yellow", "Green"];
 
 export default function ProfilePage() {
@@ -344,7 +343,13 @@ export default function ProfilePage() {
                                     <button
                                         key={dept}
                                         type="button"
-                                        onClick={() => setFormData({...formData, department: dept})}
+                                        onClick={() => {
+                                            setFormData({
+                                                ...formData, 
+                                                department: dept,
+                                                semester: "" // Reset semester when department changes
+                                            });
+                                        }}
                                         className={`p-3 rounded-xl border text-xs md:text-sm font-black tracking-widest transition-all duration-300 ${
                                             formData.department === dept 
                                             ? "bg-[#BA170D] text-white border-[#BA170D] shadow-[0_0_20px_rgba(186,23,13,0.3)] scale-[1.02]" 
@@ -359,26 +364,32 @@ export default function ProfilePage() {
                         </div>
 
                         {/* Semester */}
-                        <div>
-                            <label className="block text-[10px] font-black text-[#BA170D] uppercase tracking-[0.2em] mb-3 ml-1">Semester <span className="text-red-500">*</span></label>
-                            <div className="grid grid-cols-4 gap-3">
-                                {SEMESTERS.map((sem) => (
-                                    <button
-                                        key={sem}
-                                        type="button"
-                                        onClick={() => setFormData({...formData, semester: sem})}
-                                        className={`p-3 rounded-xl border text-xs md:text-sm font-black tracking-widest transition-all duration-300 ${
-                                            formData.semester === sem 
-                                            ? "bg-[#BA170D] text-white border-[#BA170D] shadow-[0_0_20px_rgba(186,23,13,0.3)] scale-[1.02]" 
-                                            : "bg-white/5 text-gray-400 border-white/10 hover:border-white/30 hover:bg-white/10"
-                                        }`}
-                                    >
-                                        {sem}
-                                    </button>
-                                ))}
-                            </div>
-                            {!formData.semester && <p className="text-red-500/50 text-[10px] mt-2 ml-1 font-bold tracking-wider">Required</p>}
-                        </div>
+                        {formData.department && (
+                            <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: "auto" }}
+                                className="overflow-hidden"
+                            >
+                                <label className="block text-[10px] font-black text-[#BA170D] uppercase tracking-[0.2em] mb-3 ml-1">Semester <span className="text-red-500">*</span></label>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                    {(formData.department === "CSE" ? CSE_SEMESTERS : SEMESTERS).map((sem) => (
+                                        <button
+                                            key={sem}
+                                            type="button"
+                                            onClick={() => setFormData({...formData, semester: sem})}
+                                            className={`p-3 rounded-xl border text-[10px] md:text-xs font-black tracking-widest transition-all duration-300 ${
+                                                formData.semester === sem 
+                                                ? "bg-[#BA170D] text-white border-[#BA170D] shadow-[0_0_20px_rgba(186,23,13,0.3)] scale-[1.02]" 
+                                                : "bg-white/5 text-gray-400 border-white/10 hover:border-white/30 hover:bg-white/10"
+                                            }`}
+                                        >
+                                            {sem}
+                                        </button>
+                                    ))}
+                                </div>
+                                {!formData.semester && <p className="text-red-500/50 text-[10px] mt-2 ml-1 font-bold tracking-wider">Required</p>}
+                            </motion.div>
+                        )}
 
                         {/* House */}
                         <div>
