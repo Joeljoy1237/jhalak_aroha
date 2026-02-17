@@ -95,7 +95,7 @@ function LoginContent() {
               className="relative w-32 h-32 flex items-center justify-center"
             >
                <Image 
-                src="/logo.png" 
+                src="/Logo.png" 
                 alt="Logo" 
                 width={128} 
                 height={128} 
