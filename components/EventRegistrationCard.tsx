@@ -655,7 +655,21 @@ export default function EventRegistrationCard({
                   {event.rules.map((rule, idx) => (
                     <li key={idx} className="flex gap-3 text-sm text-gray-300">
                       <span className="text-[#BA170D] font-bold">•</span>
-                      {rule}
+                      {rule.startsWith("Submission Link: ") ? (
+                        <span>
+                          Submission Link:{" "}
+                          <a
+                            href={rule.replace("Submission Link: ", "")}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-400 hover:text-blue-300 underline break-all"
+                          >
+                            {rule.replace("Submission Link: ", "")}
+                          </a>
+                        </span>
+                      ) : (
+                        rule
+                      )}
                     </li>
                   ))}
                 </ul>

@@ -1089,6 +1089,7 @@ export const categories: Category[] = [
                     "Landscape orientation (16:9), min 720p",
                     "Original source played at beginning",
                     "Upload by 26-02-2026",
+                    "Submission Link: https://drive.google.com/drive/folders/1bGGA52Y9Q0XA3FJVp0ouWS39PPSKggUK",
                     "No vulgar/offensive content"
                 ],
                 gradient: "from-sky-700 to-black",
