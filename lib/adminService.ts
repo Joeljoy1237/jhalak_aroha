@@ -85,6 +85,7 @@ export interface EventStat {
     entryCount: number;
     participantCount: number;
     registrations: any[]; // Full data for export
+    isRegistrationClosed: boolean;
 }
 
 import { categories } from "@/data/constant";
@@ -110,9 +111,20 @@ export const fetchEventStats = async (): Promise<EventStat[]> => {
                     totalRegistrations: 0,
                     entryCount: 0,
                     participantCount: 0,
-                    registrations: []
+                    registrations: [],
+                    isRegistrationClosed: false
                 });
             });
+        });
+
+        // Fetch Event Settings (Closed Status)
+        const settingsRef = collection(firestore, "event_settings");
+        const settingsSnap = await getDocs(settingsRef);
+        settingsSnap.forEach(doc => {
+            const data = doc.data();
+            if (statsMap.has(doc.id)) {
+                statsMap.get(doc.id)!.isRegistrationClosed = data.isClosed || false;
+            }
         });
 
         regsSnap.forEach(doc => {
@@ -202,6 +214,18 @@ export const resetEventCounter = async (eventTitle: string): Promise<{ success: 
     } catch (error: any) {
         console.error("Error resetting counter and data:", error);
         return { success: false, message: error.message || "Failed to reset." };
+    }
+};
+
+export const toggleEventRegistration = async (eventTitle: string, currentStatus: boolean): Promise<{ success: boolean; message?: string }> => {
+    if (!db) return { success: false, message: "Database not initialized" };
+    try {
+        const settingsRef = doc(db, "event_settings", eventTitle);
+        await setDoc(settingsRef, { isClosed: !currentStatus }, { merge: true });
+        return { success: true, message: `Registration ${!currentStatus ? "Closed" : "Opened"} for ${eventTitle}` };
+    } catch (error: any) {
+        console.error("Error toggling registration:", error);
+        return { success: false, message: error.message || "Failed to toggle registration." };
     }
 };
 

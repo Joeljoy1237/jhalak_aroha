@@ -64,6 +64,7 @@ export interface TeamRegistration {
 export interface SoloRegistration {
     userId: string; // User UID
     events: string[]; // Array of Event Titles user has registered for individually
+    teamEvents?: string[]; // Array of Event Titles user has registered for as part of a team (for transactional counts)
     lastUpdated: string;
 }
 
@@ -138,7 +139,7 @@ export const categories: Category[] = [
                 description: "Group singing performance in any language.",
                 tags: ["Group", "Music", "Choir"],
                 minParticipants: 5,
-                maxParticipants: 7,
+                maxParticipants: 10,
                 timeLimit: "6 minutes",
                 rules: [
                     "Any language",
@@ -155,8 +156,8 @@ export const categories: Category[] = [
                 title: "Thiruvathira",
                 description: "Traditional Kerala dance form performed in a group.",
                 tags: ["Group", "Traditional", "Dance"],
-                minParticipants: 1,
-                maxParticipants: 8,
+                minParticipants: 8,
+                maxParticipants: 10,
                 timeLimit: "10 minutes",
                 rules: [
                     "Track on pen drive (participant’s responsibility)",
@@ -272,8 +273,8 @@ export const categories: Category[] = [
                 title: "Oppana",
                 description: "Traditional Muslim wedding dance performed by girls.",
                 tags: ["Group", "Traditional", "Dance", "Girls only"],
-                minParticipants: 1,
-                maxParticipants: 9,
+                minParticipants: 7,
+                maxParticipants: 10,
                 timeLimit: "8 minutes",
                 rules: [
                     "Only girls",
@@ -313,7 +314,7 @@ export const categories: Category[] = [
                 description: "Team fashion walk based on a specific theme.",
                 tags: ["Group", "Fashion", "Walk"],
                 minParticipants: 2,
-                maxParticipants: null, // not specified
+                maxParticipants: 10,
                 timeLimit: "5 minutes",
                 rules: [
                     "Each team must have a theme",
@@ -367,8 +368,8 @@ export const categories: Category[] = [
                 title: "Margam Kali",
                 description: "Traditional dance form of the Syrian Christians in Kerala.",
                 tags: ["Group", "Traditional", "Dance"],
-                minParticipants: 1,
-                maxParticipants: 8,
+                minParticipants: 7,
+                maxParticipants: 12,
                 timeLimit: "10 minutes",
                 rules: [
                     "Only one team per house",

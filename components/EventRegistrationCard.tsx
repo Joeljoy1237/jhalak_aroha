@@ -10,6 +10,11 @@ import {
   Search,
   AlertCircle,
   Info,
+  HelpCircle,
+  Clock,
+  User,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
@@ -22,12 +27,13 @@ import {
 interface EventRegistrationCardProps {
   event: EventItem;
   isSelected: boolean;
-  isLocked: boolean; // True if user is a member but not leader
-  teamDetails?: TeamRegistration; // If selected/locked, pass details
+  isLocked?: boolean;
+  teamDetails?: TeamRegistration;
   onToggle: () => void;
-  onCreateTeam: (members: any[]) => Promise<void>; // Pass members array
-  onLeaveTeam: () => Promise<void>;
-  currentUser: any; // User object from firebase auth
+  onCreateTeam: (members: any[]) => void;
+  onLeaveTeam: () => void;
+  currentUser: any;
+  isRegistrationClosed?: boolean;
 }
 
 export default function EventRegistrationCard({
@@ -39,11 +45,12 @@ export default function EventRegistrationCard({
   onCreateTeam,
   onLeaveTeam,
   currentUser,
+  isRegistrationClosed = false,
 }: EventRegistrationCardProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [teamMembers, setTeamMembers] = useState<
-    { email: string; uid?: string; name?: string; status?: string }[]
-  >([]);
+  const [isExpanded, setIsExpanded] = useState(isSelected && !!teamDetails);
+  const [teamMembers, setTeamMembers] = useState<any[]>(
+    teamDetails?.members || [],
+  );
   const [searchEmail, setSearchEmail] = useState("");
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState("");
@@ -209,12 +216,26 @@ export default function EventRegistrationCard({
   return (
     <motion.div
       layout
-      className={`relative border rounded-2xl overflow-hidden transition-all duration-300 ${
+      className={`relative group bg-[#111] border rounded-2xl p-4 transition-all duration-300 hover:border-[#BA170D]/40 hover:shadow-2xl hover:shadow-[#BA170D]/5 ${
         isSelected
-          ? "bg-[#BA170D]/10 border-[#BA170D] shadow-[0_0_20px_rgba(186,23,13,0.15)]"
-          : "bg-white/5 border-white/10 hover:border-white/20"
+          ? "border-[#BA170D] bg-[#BA170D]/5"
+          : isRegistrationClosed
+            ? "border-white/5 opacity-60 grayscale-[0.8]"
+            : "border-white/10"
       }`}
     >
+      {/* Modern Overlay for Closed State */}
+      {isRegistrationClosed && !isSelected && (
+        <div className="absolute inset-x-0 -top-2 flex justify-center z-20 pointer-events-none">
+          <div className="px-3 py-1 bg-black border border-white/10 rounded-full shadow-xl flex items-center gap-1.5 backdrop-blur-md">
+            <Lock size={10} className="text-red-500" />
+            <span className="text-[9px] font-black text-white uppercase tracking-[0.15em]">
+              Entries Locked
+            </span>
+          </div>
+        </div>
+      )}
+
       <Toast
         message={toast.message}
         type={toast.type}
@@ -262,16 +283,29 @@ export default function EventRegistrationCard({
             </div>
           ) : (
             <button
-              onClick={() =>
-                isGroup ? setIsExpanded(!isExpanded) : onToggle()
-              }
+              onClick={() => {
+                if (isRegistrationClosed && !isSelected) {
+                  showToast("Registration is closed for this event.", "info");
+                  return;
+                }
+                isGroup ? setIsExpanded(!isExpanded) : onToggle();
+              }}
+              disabled={isRegistrationClosed && !isSelected}
               className={`p-2 rounded-full transition-colors ${
                 isSelected
                   ? "bg-[#BA170D] text-white"
-                  : "bg-white/10 text-white hover:bg-white/20"
+                  : isRegistrationClosed
+                    ? "bg-white/5 text-gray-600 cursor-not-allowed"
+                    : "bg-white/10 text-white hover:bg-white/20"
               }`}
             >
-              {isSelected ? <Check size={20} /> : <Plus size={20} />}
+              {isSelected ? (
+                <Check size={20} />
+              ) : isRegistrationClosed ? (
+                <Lock size={20} />
+              ) : (
+                <Plus size={20} />
+              )}
             </button>
           )}
         </div>
@@ -288,7 +322,7 @@ export default function EventRegistrationCard({
 
         {/* Group Registration Area */}
         <AnimatePresence>
-          {isGroup && (isExpanded || isSelected) && !isLocked && (
+          {isGroup && (isExpanded || isSelected) && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
@@ -302,29 +336,28 @@ export default function EventRegistrationCard({
                     Your Team
                   </h4>
                   <ul className="space-y-2 mb-4">
+                    {/* Leader */}
                     <li className="text-sm text-white flex items-center gap-2">
                       <div className="w-6 h-6 rounded-full bg-[#BA170D] flex items-center justify-center text-white text-xs font-bold">
                         L
                       </div>
-                      You (Leader)
+                      {teamDetails?.members.find((m) => m.role === "leader")
+                        ?.uid === currentUser.uid
+                        ? "You (Leader)"
+                        : `${teamDetails?.members.find((m) => m.role === "leader")?.name || "Leader"} (Leader)`}
                     </li>
+                    {/* Other Members */}
                     {teamDetails?.members
-                      .filter(
-                        (m) =>
-                          m.role !== "leader" &&
-                          m.uid !== currentUser.uid &&
-                          m.email?.toLowerCase() !==
-                            currentUser.email?.toLowerCase(),
-                      )
+                      .filter((m) => m.role === "member")
                       .map((m, i) => (
                         <li
                           key={i}
                           className="text-sm text-gray-300 flex items-center gap-2"
                         >
                           <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-xs">
-                            M
+                            {m.uid === currentUser.uid ? "Y" : "M"}
                           </div>
-                          {m.name}{" "}
+                          {m.uid === currentUser.uid ? "You" : m.name}
                           <span className="text-xs text-gray-500">
                             ({m.email})
                           </span>
@@ -361,14 +394,14 @@ export default function EventRegistrationCard({
                     {/* Signup URL with Copy Button */}
                     <div className="flex items-center gap-2 bg-black/30 rounded-lg p-2 border border-white/10">
                       <a
-                        href="/signup"
+                        href="/login"
                         target="_blank"
                         className="text-[#BA170D] hover:underline font-mono text-xs flex-1 truncate"
                       >
                         {typeof window !== "undefined"
                           ? window.location.origin
                           : ""}
-                        /signup
+                        /login
                       </a>
                       <button
                         onClick={() => {
@@ -516,10 +549,12 @@ export default function EventRegistrationCard({
 
                   <button
                     onClick={handleSubmitTeam}
-                    disabled={teamMembers.length === 0}
+                    disabled={teamMembers.length === 0 || isRegistrationClosed}
                     className="w-full py-3 bg-[#BA170D] text-white font-bold text-sm rounded-lg hover:bg-[#A00000] disabled:bg-gray-600 disabled:cursor-not-allowed transition-all"
                   >
-                    Confirm Team Registration
+                    {isRegistrationClosed
+                      ? "Registration Closed"
+                      : "Confirm Team Registration"}
                   </button>
                 </div>
               )}

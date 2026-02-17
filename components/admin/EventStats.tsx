@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { EventStat, fetchEventStats } from "@/lib/adminService";
-import { Search, Download, Users, Layers, RefreshCcw, Eye } from "lucide-react";
+import { Search, Download, Users, Layers, RefreshCcw, Eye, Power } from "lucide-react";
 import * as XLSX from "xlsx";
 import toast from "react-hot-toast";
 import ConfirmToast from "@/components/ConfirmToast";
@@ -165,7 +165,7 @@ export default function EventStats() {
     <div className="space-y-6">
       {/* Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-gradient-to-br from-purple-900/50 to-black p-6 rounded-xl border border-white/10">
+        <div className="bg-linear-to-br from-purple-900/50 to-black p-6 rounded-xl border border-white/10">
           <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">
             Total Events
           </h3>
@@ -173,7 +173,7 @@ export default function EventStats() {
             {stats.length}
           </p>
         </div>
-        <div className="bg-gradient-to-br from-blue-900/50 to-black p-6 rounded-xl border border-white/10">
+        <div className="bg-linear-to-br from-blue-900/50 to-black p-6 rounded-xl border border-white/10">
           <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">
             Total Entries
           </h3>
@@ -181,7 +181,7 @@ export default function EventStats() {
             {totalEntries}
           </p>
         </div>
-        <div className="bg-gradient-to-br from-[#BA170D]/20 to-black p-6 rounded-xl border border-white/10">
+        <div className="bg-linear-to-br from-[#BA170D]/20 to-black p-6 rounded-xl border border-white/10">
           <h3 className="text-[#BA170D] text-xs font-bold uppercase tracking-widest mb-1">
             Total Participants
           </h3>
@@ -229,6 +229,7 @@ export default function EventStats() {
               <th className="p-4">Type</th>
               <th className="p-4 text-center">Entries</th>
               <th className="p-4 text-center">Participants</th>
+              <th className="p-4 text-center">Reg. Status</th>
               <th className="p-4 text-right">Actions</th>
             </tr>
           </thead>
@@ -264,6 +265,37 @@ export default function EventStats() {
                 </td>
                 <td className="p-4 text-center font-mono text-white">
                   {stat.participantCount}
+                </td>
+                <td className="p-4 text-center">
+                  <button
+                    onClick={async () => {
+                      const { toggleEventRegistration } = await import(
+                        "@/lib/adminService"
+                      );
+                      const res = await toggleEventRegistration(
+                        stat.title,
+                        stat.isRegistrationClosed,
+                      );
+                      if (res.success) {
+                        toast.success(res.message || "Status updated");
+                        loadData();
+                      } else {
+                        toast.error(res.message || "Failed to update status");
+                      }
+                    }}
+                    className={`p-2 rounded-full transition-all ${
+                      stat.isRegistrationClosed
+                        ? "bg-gray-800 text-gray-500 hover:text-red-500"
+                        : "bg-green-500/10 text-green-500 hover:bg-green-500/20"
+                    }`}
+                    title={
+                      stat.isRegistrationClosed
+                        ? "Registration Closed - Click to Open"
+                        : "Registration Open - Click to Close"
+                    }
+                  >
+                    <Power size={18} />
+                  </button>
                 </td>
                 <td className="p-4 text-right">
                   <button
