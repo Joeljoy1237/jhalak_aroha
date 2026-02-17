@@ -26,6 +26,37 @@ const getEventDetails = (eventTitle: string): EventItem | undefined => {
     return allItems.find((item) => item.title === eventTitle);
 };
 
+export const checkRegistrationStatus = async (eventTitle: string): Promise<{ isClosed: boolean }> => {
+    if (!db) return { isClosed: false };
+    try {
+        const settingsRef = doc(db, "event_settings", eventTitle);
+        const settingsSnap = await getDoc(settingsRef);
+        if (settingsSnap.exists()) {
+            return { isClosed: settingsSnap.data().isClosed || false };
+        }
+        return { isClosed: false };
+    } catch (error) {
+        console.error("Error checking registration status:", error);
+        return { isClosed: false };
+    }
+};
+
+export const fetchAllEventSettings = async (): Promise<Record<string, boolean>> => {
+    if (!db) return {};
+    try {
+        const settingsRef = collection(db, "event_settings");
+        const settingsSnap = await getDocs(settingsRef);
+        const settings: Record<string, boolean> = {};
+        settingsSnap.forEach(doc => {
+            settings[doc.id] = doc.data().isClosed || false;
+        });
+        return settings;
+    } catch (error) {
+        console.error("Error fetching all event settings:", error);
+        return {};
+    }
+};
+
 // Validate rules (no changes to logic, just context)
 export const validateRegistrationRules = (
     existingSoloEvents: string[],
@@ -114,6 +145,9 @@ export const createTeam = async (
     const firestore = db;
 
     try {
+        const status = await checkRegistrationStatus(eventTitle);
+        if (status.isClosed) return { success: false, message: "Registration is closed for this event." };
+
         return await runTransaction(firestore, async (transaction) => {
             // ==========================================
             // 1. ALL READS & PRE-VALIDATION
@@ -242,6 +276,20 @@ export const updateUserSoloRegistrations = async (uid: string, newEvents: string
     const firestore = db;
 
     try {
+        // Check for each added event
+        for (const eventTitle of newEvents) {
+            const status = await checkRegistrationStatus(eventTitle);
+            if (status.isClosed) {
+                // If it was already in currentEvents, we allow keeping it, but not adding new ones
+                const soloDocRef = doc(firestore, "registrations", uid);
+                const soloDoc = await getDoc(soloDocRef);
+                const currentEvents = soloDoc.exists() ? ((soloDoc.data() as SoloRegistration).events || []) : [];
+                if (!currentEvents.includes(eventTitle)) {
+                    return { success: false, message: `Registration is closed for ${eventTitle}.` };
+                }
+            }
+        }
+
         return await runTransaction(firestore, async (transaction) => {
             // 1. ALL READS
             const soloDocRef = doc(firestore, "registrations", uid);

@@ -11,12 +11,14 @@ import { ArrowLeft, Save } from "lucide-react";
 import toast from "react-hot-toast";
 import ConfirmToast from "@/components/ConfirmToast";
 import EventRegistrationCard from "@/components/EventRegistrationCard";
+import EventCardSkeleton from "@/components/EventCardSkeleton";
 import {
   fetchUserRegistrations,
   updateUserSoloRegistrations,
   createTeam,
   leaveTeam,
   validateRegistrationRules,
+  fetchAllEventSettings,
 } from "@/lib/registrationService";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -69,6 +71,7 @@ export default function RegisterPage() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [saving, setSaving] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [eventSettings, setEventSettings] = useState<Record<string, boolean>>({});
 
   // Initial Auth & Data Fetch
   useEffect(() => {
@@ -80,15 +83,17 @@ export default function RegisterPage() {
       }
       setUser(currentUser);
 
-      // Fetch User Profile and Registrations in parallel
+      // Fetch User Profile, Registrations, and Event Settings in parallel
       try {
-        const [regData, userDoc] = await Promise.all([
+        const [regData, userDoc, settings] = await Promise.all([
           fetchUserRegistrations(currentUser.uid),
           getDoc(doc(db!, "users", currentUser.uid)),
+          fetchAllEventSettings(),
         ]);
 
         setRegistrations(regData);
         setPendingSoloEvents(regData.soloEvents);
+        setEventSettings(settings);
 
         if (userDoc.exists()) {
           setUserProfile({ ...userDoc.data(), uid: userDoc.id });
@@ -231,12 +236,6 @@ export default function RegisterPage() {
     );
   };
 
-  if (loading)
-    return (
-      <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center text-white">
-        <div className="animate-spin w-8 h-8 border-2 border-[#BA170D] border-t-transparent rounded-full"></div>
-      </div>
-    );
 
   return (
     <main className="min-h-screen bg-[#0A0A0A] text-white font-outfit relative overflow-y-auto selection:bg-[#BA170D] selection:text-white">
@@ -319,39 +318,45 @@ export default function RegisterPage() {
                 </h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {cat.items.map((event) => {
-                    // Check local pending state
-                    const isSoloRegistered = pendingSoloEvents.includes(
-                      event.title,
-                    );
+                  {loading
+                    ? Array.from({ length: 6 }).map((_, i) => (
+                        <EventCardSkeleton key={i} />
+                      ))
+                    : cat.items.map((event) => {
+                        // Check local pending state
+                        const isSoloRegistered = pendingSoloEvents.includes(
+                          event.title,
+                        );
 
-                    // Check if registered as Team (server state)
-                    const teamReg = registrations.teamEvents.find(
-                      (t) => t.eventTitle === event.title,
-                    );
+                        // Check if registered as Team (server state)
+                        const teamReg = registrations.teamEvents.find(
+                          (t) => t.eventTitle === event.title,
+                        );
 
-                    const isSelected = isSoloRegistered || !!teamReg;
-                    const isLocked =
-                      !!teamReg && teamReg.leaderId !== user?.uid;
+                        const isSelected = isSoloRegistered || !!teamReg;
+                        const isLocked =
+                          !!teamReg && teamReg.leaderId !== user?.uid;
+                        const isClosed = eventSettings[event.title] || false;
 
-                    return (
-                      <EventRegistrationCard
-                        key={event.title}
-                        event={event}
-                        isSelected={isSelected}
-                        isLocked={isLocked}
-                        teamDetails={teamReg}
-                        onToggle={() => handleToggleSolo(event)} // Handles local state
-                        onCreateTeam={(members) =>
-                          handleCreateTeam(event, members)
-                        }
-                        onLeaveTeam={async () => {
-                          if (teamReg?.id) await handleLeaveTeam(teamReg.id);
-                        }}
-                        currentUser={userProfile || user}
-                      />
-                    );
-                  })}
+                        return (
+                          <EventRegistrationCard
+                            key={event.title}
+                            event={event}
+                            isSelected={isSelected}
+                            isLocked={isLocked}
+                            isRegistrationClosed={isClosed}
+                            teamDetails={teamReg}
+                            onToggle={() => handleToggleSolo(event)} // Handles local state
+                            onCreateTeam={(members) =>
+                              handleCreateTeam(event, members)
+                            }
+                            onLeaveTeam={async () => {
+                              if (teamReg?.id) await handleLeaveTeam(teamReg.id);
+                            }}
+                            currentUser={userProfile || user}
+                          />
+                        );
+                      })}
                 </div>
               </section>
             ))}
