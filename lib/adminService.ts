@@ -491,3 +491,32 @@ export const fetchDetailedEventRegistrations = async (eventTitle: string): Promi
         return [];
     }
 };
+
+// 9. Fix User Registration Data (Remove event from arrays)
+export const cleanUserRegistration = async (uid: string, eventTitle: string): Promise<{ success: boolean; message?: string }> => {
+    if (!db) return { success: false, message: "Database not initialized" };
+    try {
+        const regRef = doc(db, "registrations", uid);
+        await setDoc(regRef, {
+            events: arrayRemove(eventTitle),
+            teamEvents: arrayRemove(eventTitle)
+        }, { merge: true });
+
+        // Also clean up any stale event_registration docs for this user/event combo if they exist individually
+        // (Team cleanup is complex, but this helps the main blocker)
+        const q = query(
+            collection(db, "event_registrations"),
+            where("userId", "==", uid),
+            where("eventTitle", "==", eventTitle)
+        );
+        const snaps = await getDocs(q);
+        const batch = writeBatch(db);
+        snaps.forEach(doc => batch.delete(doc.ref));
+        if (!snaps.empty) await batch.commit();
+
+        return { success: true, message: `Removed ${eventTitle} from user ${uid}` };
+    } catch (error: any) {
+        console.error("Error cleaning user reg:", error);
+        return { success: false, message: error.message };
+    }
+};
