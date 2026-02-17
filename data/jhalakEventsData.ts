@@ -41,7 +41,7 @@ export const jhalakEvents: EventRule[] = [
         title: "Group Song",
         category: "onstage",
         rules: [
-            "5 to 7 members.",
+            "5 to 10 members.",
             "Maximum time limit is 6 minutes.",
             "Any language songs are allowed.",
             "Maximum 2 teams from each house.",
@@ -52,7 +52,7 @@ export const jhalakEvents: EventRule[] = [
         title: "Thiruvathira",
         category: "onstage",
         rules: [
-            "Max 8 participants.",
+            "8 to 10 participants.",
             "The track should be brought on a pen drive, if it doesn't play at the time of the event, the participant is solely responsible.",
             "Only one team from each house is allowed.",
             "Maximum time limit is 10 minutes.",
@@ -127,7 +127,7 @@ export const jhalakEvents: EventRule[] = [
         title: "Oppana",
         category: "onstage",
         rules: [
-            "Max 9 Participants (only girls).",
+            "7 to 10 Participants (only girls).",
             "Duration of the dance should not be more than 8 minutes.",
             "Screening is required.",
             "Performers must wear traditional attire—typically a Kachi (cloth), Kuppayam (blouse), and a Thattam (headscarf). The bride should be dressed in fine jewelry and silks.",
@@ -153,6 +153,7 @@ export const jhalakEvents: EventRule[] = [
         category: "onstage",
         rules: [
             "Each team must have a specific theme.",
+            "Maximum 10 participants.",
             "Maximum Time Limit- 5 minutes.",
             "Costumes should reflect creativity and be relevant to the theme.",
             "Background music is allowed and should match the theme of the performance.",
@@ -184,7 +185,7 @@ export const jhalakEvents: EventRule[] = [
         title: "Margam Kali",
         category: "onstage",
         rules: [
-            "Max 8 participants.",
+            "7 to 12 participants.",
             "Only one team from each house is allowed.",
             "Maximum time limit is 10 minutes.",
             "Screening is required.",

@@ -361,14 +361,14 @@ export default function EventRegistrationCard({
                     {/* Signup URL with Copy Button */}
                     <div className="flex items-center gap-2 bg-black/30 rounded-lg p-2 border border-white/10">
                       <a
-                        href="/signup"
+                        href="/login"
                         target="_blank"
                         className="text-[#BA170D] hover:underline font-mono text-xs flex-1 truncate"
                       >
                         {typeof window !== "undefined"
                           ? window.location.origin
                           : ""}
-                        /signup
+                        /login
                       </a>
                       <button
                         onClick={() => {
