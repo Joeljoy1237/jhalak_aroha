@@ -265,6 +265,31 @@ export default function Footer() {
                 </div>
               </div>
             </div>
+            {/* Ticketing Partner */}
+            <div className="footer-link-group flex flex-col space-y-6">
+              <h4 className="text-gray-500 uppercase tracking-widest text-xs font-bold mb-2">
+                Ticketing Partner
+              </h4>
+              <Link
+                href="https://www.graburpass.com"
+                target="_blank"
+                className="group flex flex-col gap-3 items-start"
+              >
+                <div className="bg-white/5 p-3 rounded-lg border border-white/10 group-hover:border-[#BA170D]/50 transition-colors">
+                  <img
+                    src="/brand.png"
+                    alt="GrabUrPass"
+                    className="h-8 w-auto opacity-80 group-hover:opacity-100 transition-opacity"
+                  />
+                </div>
+                <span className="text-xs text-gray-400 group-hover:text-white transition-colors">
+                  www.graburpass.com
+                </span>
+                <span className="text-[10px] text-[#BA170D] font-bold uppercase tracking-wider bg-[#BA170D]/10 px-2 py-1 rounded-full border border-[#BA170D]/20">
+                  Official Partner
+                </span>
+              </Link>
+            </div>
           </div>
         </div>
 
