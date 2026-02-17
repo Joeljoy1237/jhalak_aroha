@@ -70,7 +70,7 @@ export default function EventRegistrationCard({
   }, [searchEmail]);
 
   const handleSearchUser = async () => {
-    if (!searchEmail) return;
+    if (!searchEmail || searchLoading) return;
 
     // Self-add check
     if (
@@ -78,6 +78,16 @@ export default function EventRegistrationCard({
       searchEmail.toLowerCase() === currentUser.email?.toLowerCase()
     ) {
       setSearchError("You are already the team leader.");
+      return;
+    }
+
+    // Check if already in team (local check)
+    if (
+      teamMembers.some(
+        (m) => m.email.toLowerCase() === searchEmail.toLowerCase(),
+      )
+    ) {
+      setSearchError("User already added to team.");
       return;
     }
 
@@ -104,45 +114,57 @@ export default function EventRegistrationCard({
         // Check if already added
         if (teamMembers.some((m) => m.email === userData.email)) {
           setSearchError("User already added to team.");
-        } else if (
-          currentUser.house &&
-          userData.house &&
-          currentUser.house !== userData.house
-        ) {
-          setSearchError(
-            `Cannot add member. They are from ${userData.house}, but you are from ${currentUser.house}.`,
-          );
         } else {
-          // Check registration limits
-          try {
-            const registrations = await fetchUserRegistrations(userDoc.id);
-            // Check if adding this event is valid for them
-            const validation = validateRegistrationRules(
-              registrations.soloEvents,
-              registrations.teamEvents,
-              null, // use existing solo
-              event.title, // new team event
+          // Strict House Check
+          const leaderHouse = currentUser?.house;
+          const memberHouse = userData?.house;
+
+          if (!leaderHouse) {
+            setSearchError(
+              "You are not assigned to a house. Please contact admin.",
             );
+          } else if (!memberHouse) {
+            setSearchError("This user is not assigned to a house.");
+          } else if (leaderHouse.toLowerCase() !== memberHouse.toLowerCase()) {
+            setSearchError(
+              `Cannot add member. They are from ${memberHouse}, but you are from ${leaderHouse}.`,
+            );
+          } else {
+            // Continue to Check registration limits...
+            // Check registration limits
+            try {
+              const registrations = await fetchUserRegistrations(userDoc.id);
+              // Check if adding this event is valid for them
+              const validation = validateRegistrationRules(
+                registrations.soloEvents,
+                registrations.teamEvents,
+                null, // use existing solo
+                event.title, // new team event
+              );
 
-            if (!validation.valid) {
-              setSearchError(`Limit reached: ${validation.message}`);
-              return;
+              if (!validation.valid) {
+                setSearchError(`Limit reached: ${validation.message}`);
+                return;
+              }
+
+              setTeamMembers((prev) => {
+                if (prev.some((m) => m.uid === userDoc.id)) return prev;
+                return [
+                  ...prev,
+                  {
+                    email: userData.email,
+                    uid: userDoc.id,
+                    name: userData.name,
+                    status: "pending",
+                  },
+                ];
+              });
+              setSearchEmail(""); // Clear input on success
+              showToast("Team member added!", "success");
+            } catch (err) {
+              console.error("Validation error", err);
+              setSearchError("Could not validate user limits. Try again.");
             }
-
-            setTeamMembers((prev) => [
-              ...prev,
-              {
-                email: userData.email,
-                uid: userDoc.id,
-                name: userData.name,
-                status: "pending",
-              },
-            ]);
-            setSearchEmail(""); // Clear input on success
-            showToast("Team member added!", "success");
-          } catch (err) {
-            console.error("Validation error", err);
-            setSearchError("Could not validate user limits. Try again.");
           }
         }
       }
