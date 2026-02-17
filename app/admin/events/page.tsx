@@ -6,5 +6,5 @@ import { useAuthState } from "react-firebase-hooks/auth";
 
 export default function EventsPage() {
   const [user] = useAuthState(auth);
-  return <EventStats user={user} />;
+  return <EventStats user={user ?? null} />;
 }
