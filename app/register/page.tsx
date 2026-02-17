@@ -91,7 +91,7 @@ export default function RegisterPage() {
         setPendingSoloEvents(regData.soloEvents);
 
         if (userDoc.exists()) {
-          setUserProfile(userDoc.data());
+          setUserProfile({ ...userDoc.data(), uid: userDoc.id });
         }
       } catch (error) {
         console.error("Error fetching user data:", error);

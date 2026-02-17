@@ -777,27 +777,6 @@ export const categories: Category[] = [
                 categoryType: 'off_stage',
                 shortCode: 'WATC'
             },
-
-            {
-                title: "Drawing",
-                description: "Create a drawing using any medium based on a given theme.",
-                tags: ["Art", "Drawing", "Solo", "Mixed Media"],
-                minParticipants: 1,
-                maxParticipants: 1,
-                timeLimit: "2 hours",
-                rules: [
-                    "Theme given 10 minutes before",
-                    "Bring own materials (pencils, charcoal, pastels, etc.); drawing sheet provided",
-                    "No reference photos",
-                    "Maintain silence",
-                    "Any dry medium allowed (no paints)"
-                ],
-                gradient: "from-yellow-800 to-black",
-                eventType: 'individual',
-                categoryType: 'off_stage',
-                shortCode: 'DRAW'
-            },
-
             {
                 title: "Glass Painting",
                 description: "Paint on glass sheet with a given theme.",

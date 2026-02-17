@@ -1,14 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { EventStat, fetchEventStats } from "@/lib/adminService";
-import { Search, Download, Users, Layers, RefreshCcw } from "lucide-react";
+import { Search, Download, Users, Layers, RefreshCcw, Eye } from "lucide-react";
 import * as XLSX from "xlsx";
 import toast from "react-hot-toast";
 import ConfirmToast from "@/components/ConfirmToast";
-import { fetchAllUsersWithData } from "@/lib/adminService"; // We might need user details for export if reg doc is slim
+import { fetchAllUsersWithData } from "@/lib/adminService";
 
 export default function EventStats() {
+  const router = useRouter();
   const [stats, setStats] = useState<EventStat[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -30,7 +32,7 @@ export default function EventStats() {
   };
 
   const handleExportEvent = async (eventStat: EventStat) => {
-    setLoading(true); // Show loading state during export preparation
+    setLoading(true);
     try {
       const allUsers = await fetchAllUsersWithData();
       const userMap = new Map(allUsers.map((u) => [u.uid, u]));
@@ -41,7 +43,7 @@ export default function EventStats() {
         if (reg.type === "individual") {
           const user = userMap.get(reg.userId);
           exportRows.push({
-            "Chest No": reg.userChestNo || reg.chestNo || "-", // Fallback to old field if migration transitional
+            "Chest No": reg.userChestNo || reg.chestNo || "-",
             "Individual Chest No": reg.userChestNo || "-",
             Type: "Individual",
             Role: "Participant",
@@ -80,10 +82,9 @@ export default function EventStats() {
           // Add Member Rows
           if (reg.memberIds && Array.isArray(reg.memberIds)) {
             for (const memberId of reg.memberIds) {
-              if (memberId === reg.leaderId) continue; // Skip if leader is in member list
+              if (memberId === reg.leaderId) continue;
 
               const member = userMap.get(memberId);
-              // Get individual chest no from map if available
               const indChestNo =
                 reg.memberChestNos && reg.memberChestNos[memberId]
                   ? reg.memberChestNos[memberId]
@@ -113,7 +114,6 @@ export default function EventStats() {
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.json_to_sheet(exportRows);
 
-      // Auto-width columns roughly
       const wscols = [
         { wch: 10 }, // Chest No
         { wch: 10 }, // Individual Chest No
@@ -133,7 +133,6 @@ export default function EventStats() {
       XLSX.utils.book_append_sheet(wb, ws, eventStat.shortCode);
       XLSX.writeFile(wb, `jhalak_${eventStat.shortCode}_participants.xlsx`);
     } catch (error) {
-      console.error("Export failed:", error);
       console.error("Export failed:", error);
       toast.error("Export failed. See console for details.");
     } finally {
@@ -267,6 +266,17 @@ export default function EventStats() {
                   {stat.participantCount}
                 </td>
                 <td className="p-4 text-right">
+                  <button
+                    onClick={() =>
+                      router.push(
+                        `/admin/events/${encodeURIComponent(stat.title)}`,
+                      )
+                    }
+                    className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold border border-white/20 text-blue-400 hover:bg-blue-900/50 hover:text-blue-200 transition-colors mr-2"
+                    title="View Detailed List"
+                  >
+                    <Eye size={14} /> VIEW
+                  </button>
                   <button
                     onClick={() => handleExportEvent(stat)}
                     disabled={stat.entryCount === 0}

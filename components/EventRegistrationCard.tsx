@@ -1,7 +1,16 @@
 import { useState, useEffect } from "react";
 import { EventItem, TeamRegistration } from "@/data/constant";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, Lock, Users, Plus, X, Search, AlertCircle } from "lucide-react";
+import {
+  Check,
+  Lock,
+  Users,
+  Plus,
+  X,
+  Search,
+  AlertCircle,
+  Info,
+} from "lucide-react";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import Toast, { ToastType } from "@/components/ui/Toast";
@@ -38,6 +47,7 @@ export default function EventRegistrationCard({
   const [searchEmail, setSearchEmail] = useState("");
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState("");
+  const [showRules, setShowRules] = useState(false);
 
   // Toast State
   const [toast, setToast] = useState<{
@@ -110,6 +120,12 @@ export default function EventRegistrationCard({
       } else {
         const userDoc = snapshot.docs[0];
         const userData = userDoc.data();
+
+        // Check if self (by UID)
+        if (userDoc.id === currentUser.uid) {
+          setSearchError("You are already the team leader.");
+          return;
+        }
 
         // Check if already added
         if (teamMembers.some((m) => m.email === userData.email)) {
@@ -224,6 +240,17 @@ export default function EventRegistrationCard({
             <p className="text-[11px] text-gray-500 mt-2 line-clamp-2 font-medium tracking-wide uppercase leading-relaxed">
               {event.description}
             </p>
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowRules(true);
+              }}
+              className="mt-3 flex items-center gap-1 text-[10px] uppercase font-bold text-gray-400 hover:text-white transition-colors"
+              title="View Rules"
+            >
+              <Info size={12} /> View Rules & Regulations
+            </button>
           </div>
 
           {isLocked ? (
@@ -282,7 +309,13 @@ export default function EventRegistrationCard({
                       You (Leader)
                     </li>
                     {teamDetails?.members
-                      .filter((m) => m.role !== "leader")
+                      .filter(
+                        (m) =>
+                          m.role !== "leader" &&
+                          m.uid !== currentUser.uid &&
+                          m.email?.toLowerCase() !==
+                            currentUser.email?.toLowerCase(),
+                      )
                       .map((m, i) => (
                         <li
                           key={i}
@@ -494,6 +527,75 @@ export default function EventRegistrationCard({
           )}
         </AnimatePresence>
       </div>
+
+      {/* Rules Modal */}
+      <AnimatePresence>
+        {showRules && (
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+            onClick={() => setShowRules(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-[#111] border border-white/10 rounded-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-6 border-b border-white/10 flex justify-between items-start shrink-0">
+                <div>
+                  <h3 className="text-xl font-black font-unbounded text-white uppercase">
+                    {event.title}
+                  </h3>
+                  <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mt-1">
+                    Rules & Regulations
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowRules(false)}
+                  className="text-gray-500 hover:text-white transition-colors"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+
+              <div className="p-6 overflow-y-auto custom-scrollbar grow">
+                {event.timeLimit && (
+                  <div className="mb-6 bg-white/5 p-4 rounded-lg border border-white/5">
+                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">
+                      Time Limit
+                    </h4>
+                    <p className="text-white font-mono text-sm">
+                      {event.timeLimit}
+                    </p>
+                  </div>
+                )}
+
+                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
+                  General Rules
+                </h4>
+                <ul className="space-y-3">
+                  {event.rules.map((rule, idx) => (
+                    <li key={idx} className="flex gap-3 text-sm text-gray-300">
+                      <span className="text-[#BA170D] font-bold">•</span>
+                      {rule}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="p-4 border-t border-white/10 bg-white/5 text-center shrink-0">
+                <button
+                  onClick={() => setShowRules(false)}
+                  className="bg-white text-black px-6 py-2 rounded-lg font-bold text-xs uppercase tracking-wider hover:bg-gray-200 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

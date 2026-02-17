@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import { AdminUserView, fetchAllUsersWithData } from "@/lib/adminService";
 import { Search, Download, Shield, User as UserIcon } from "lucide-react";
 import * as XLSX from "xlsx";
+import toast from "react-hot-toast";
+import ConfirmToast from "@/components/ConfirmToast";
+import { Trash2, AlertTriangle } from "lucide-react";
 
 import Toast, { ToastType } from "@/components/ui/Toast";
 
@@ -16,7 +19,7 @@ export default function UserManagement() {
   >("all"); // Add organizer type
 
   // Toast State
-  const [toast, setToast] = useState<{
+  const [uiToast, setUiToast] = useState<{
     message: string;
     type: ToastType;
     isVisible: boolean;
@@ -27,7 +30,7 @@ export default function UserManagement() {
   });
 
   const showToast = (message: string, type: ToastType = "info") => {
-    setToast({ message, type, isVisible: true });
+    setUiToast({ message, type, isVisible: true });
   };
 
   useEffect(() => {
@@ -106,13 +109,55 @@ export default function UserManagement() {
     }
   };
 
+  const handleDeleteUser = (uid: string, name: string) => {
+    toast.custom((t) => (
+      <ConfirmToast
+        t={t}
+        message={`Are you sure you want to delete user "${name}"? This action cannot be undone.`}
+        onConfirm={async () => {
+          setLoading(true);
+          const { deleteUser } = await import("@/lib/adminService");
+          const result = await deleteUser(uid);
+          if (result.success) {
+            showToast("User deleted successfully", "success");
+            loadData();
+          } else {
+            showToast(result.message || "Failed to delete user", "error");
+            setLoading(false);
+          }
+        }}
+      />
+    ));
+  };
+
+  const handleDeleteAllUsers = () => {
+    toast.custom((t) => (
+      <ConfirmToast
+        t={t}
+        message="DANGER: Are you sure you want to DELETE ALL USERS? This will wipe all registration data and cannot be undone!"
+        onConfirm={async () => {
+          setLoading(true);
+          const { deleteAllUsers } = await import("@/lib/adminService");
+          const result = await deleteAllUsers();
+          if (result.success) {
+            showToast("All users deleted successfully", "success");
+            loadData();
+          } else {
+            showToast(result.message || "Failed to delete users", "error");
+            setLoading(false);
+          }
+        }}
+      />
+    ));
+  };
+
   return (
     <div className="space-y-6">
       <Toast
-        message={toast.message}
-        type={toast.type}
-        isVisible={toast.isVisible}
-        onClose={() => setToast((prev) => ({ ...prev, isVisible: false }))}
+        message={uiToast.message}
+        type={uiToast.type}
+        isVisible={uiToast.isVisible}
+        onClose={() => setUiToast((prev) => ({ ...prev, isVisible: false }))}
       />
       {/* Controls */}
       <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white/5 p-4 rounded-xl border border-white/10">
@@ -143,6 +188,17 @@ export default function UserManagement() {
           </select>
 
           <button
+            onClick={handleDeleteAllUsers}
+            className="flex items-center gap-2 bg-red-900/50 hover:bg-red-900 text-red-200 px-4 py-2 rounded-lg transition-colors border border-red-800"
+            title="Delete All Users"
+          >
+            <AlertTriangle size={18} />
+            <span className="hidden md:inline text-xs font-bold uppercase">
+              Delete All
+            </span>
+          </button>
+
+          <button
             onClick={handleExport}
             className="flex items-center gap-2 bg-[#BA170D] text-white font-bold px-4 py-2 rounded-lg hover:bg-neutral-800 transition-colors"
           >
@@ -164,6 +220,7 @@ export default function UserManagement() {
               <th className="p-4">Contact</th>
               <th className="p-4 text-center">Events</th>
               <th className="p-4 text-right">Role</th>
+              <th className="p-4 text-center">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-white/10 text-sm">
@@ -240,6 +297,15 @@ export default function UserManagement() {
                       ORGANIZER
                     </option>
                   </select>
+                </td>
+                <td className="p-4 text-center">
+                  <button
+                    onClick={() => handleDeleteUser(user.uid, user.name)}
+                    className="p-2 text-gray-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                    title="Delete User"
+                  >
+                    <Trash2 size={16} />
+                  </button>
                 </td>
               </tr>
             ))}

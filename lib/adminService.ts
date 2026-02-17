@@ -219,3 +219,250 @@ export const updateUserRole = async (uid: string, newRole: string): Promise<{ su
         return { success: false, message: error.message || "Failed to update role." };
     }
 };
+
+// 5. Delete User Data
+export const deleteUser = async (uid: string): Promise<{ success: boolean; message?: string }> => {
+    if (!db) return { success: false, message: "Database not initialized" };
+
+    try {
+        const firestore = db;
+        const batch = writeBatch(firestore);
+
+        // 1. Delete User Profile
+        const userRef = doc(firestore, "users", uid);
+        batch.delete(userRef);
+
+        // 2. Delete Solo Registrations Tracker
+        const regTrackerRef = doc(firestore, "registrations", uid);
+        batch.delete(regTrackerRef);
+
+        // 3. Delete Individual Event Registrations
+        const indRegQuery = query(collection(firestore, "event_registrations"), where("userId", "==", uid));
+        const indRegSnap = await getDocs(indRegQuery);
+        indRegSnap.forEach(doc => {
+            batch.delete(doc.ref);
+        });
+
+        // 4. Handle Team Memberships
+        // A. As Leader -> Delete Team & Team Registration
+        const ledTeamQuery = query(collection(firestore, "teams"), where("leaderId", "==", uid));
+        const ledTeamSnap = await getDocs(ledTeamQuery);
+        ledTeamSnap.forEach(doc => {
+            batch.delete(doc.ref);
+        });
+
+        const ledTeamRegQuery = query(collection(firestore, "event_registrations"), where("leaderId", "==", uid));
+        const ledTeamRegSnap = await getDocs(ledTeamRegQuery);
+        ledTeamRegSnap.forEach(doc => {
+            batch.delete(doc.ref);
+        });
+
+        await batch.commit();
+
+        // 5. Cleanup as Member (Separate batch due to complexity)
+        const memberCleanupBatch = writeBatch(firestore);
+        let hasMemberCleanup = false;
+
+        const memTeamQuery = query(collection(firestore, "teams"), where("memberIds", "array-contains", uid));
+        const memTeamSnap = await getDocs(memTeamQuery);
+        memTeamSnap.forEach(doc => {
+            const data = doc.data();
+            if (data.leaderId !== uid) {
+                memberCleanupBatch.update(doc.ref, {
+                    memberIds: arrayRemove(uid),
+                    members: (data.members || []).filter((m: any) => m.uid !== uid)
+                });
+                hasMemberCleanup = true;
+            }
+        });
+
+        const memRegQuery = query(collection(firestore, "event_registrations"), where("memberIds", "array-contains", uid));
+        const memRegSnap = await getDocs(memRegQuery);
+        memRegSnap.forEach(doc => {
+            const data = doc.data();
+            if (data.leaderId !== uid) {
+                memberCleanupBatch.update(doc.ref, {
+                    memberIds: arrayRemove(uid)
+                });
+                hasMemberCleanup = true;
+            }
+        });
+
+        if (hasMemberCleanup) {
+            await memberCleanupBatch.commit();
+        }
+
+        return { success: true, message: "User deleted successfully." };
+
+    } catch (error: any) {
+        console.error("Error deleting user:", error);
+        return { success: false, message: error.message || "Failed to delete user." };
+    }
+};
+
+// 6. Bulk Delete All Users (Hazardous!)
+export const deleteAllUsers = async (): Promise<{ success: boolean; message?: string }> => {
+    if (!db) return { success: false, message: "Database not initialized" };
+    try {
+        const firestore = db;
+
+        const deleteCollection = async (colName: string) => {
+            const colRef = collection(firestore, colName);
+            const snap = await getDocs(colRef);
+            const batch = writeBatch(firestore);
+            let count = 0;
+            snap.forEach(doc => {
+                batch.delete(doc.ref);
+                count++;
+            });
+            if (count > 0) await batch.commit();
+            return count;
+        };
+
+        await deleteCollection("users");
+        await deleteCollection("registrations");
+        await deleteCollection("event_registrations");
+        await deleteCollection("teams");
+
+        await setDoc(doc(firestore, "counters", "user_chest_numbers"), { count: 0 }, { merge: true });
+
+        return { success: true, message: "All users and related data wiped." };
+
+    } catch (error: any) {
+        console.error("Error deleting all:", error);
+        return { success: false, message: error.message || "Failed to wipe data." };
+    }
+};
+
+// 7. Data Structure for Detailed Event View
+export interface DetailedRegistration {
+    id: string; // Document ID (registration id)
+    type: 'individual' | 'team';
+    chestNo: string; // The primary chest number
+    teamChestNo?: string;
+
+    // Core Participant Info (Leader for teams)
+    name: string;
+    email: string;
+    mobile: string;
+    collegeId: string;
+    department: string;
+    semester: string;
+    house: string;
+    uid: string;
+
+    // Team Specific
+    teamName?: string;
+    leaderChestNo?: string;
+    members?: {
+        name: string;
+        chestNo: string;
+        uid: string;
+        email: string;
+        collegeId?: string;
+        mobile?: string;
+        department?: string;
+        semester?: string;
+        house?: string;
+    }[];
+
+    registeredAt: any; // Timestamp
+}
+
+// 8. Fetch Detailed Registrations for a Single Event
+export const fetchDetailedEventRegistrations = async (eventTitle: string): Promise<DetailedRegistration[]> => {
+    if (!db) return [];
+
+    try {
+        const firestore = db;
+
+        // Fetch all registrations for this event
+        const q = query(collection(firestore, "event_registrations"), where("eventTitle", "==", eventTitle));
+        const regSnap = await getDocs(q);
+
+        // Fetch all users to map details
+        const usersRef = collection(firestore, "users");
+        const usersSnap = await getDocs(usersRef);
+        const userMap = new Map<string, UserProfile>();
+
+        usersSnap.forEach(doc => {
+            userMap.set(doc.id, { ...doc.data(), uid: doc.id } as UserProfile);
+        });
+
+        const results: DetailedRegistration[] = [];
+
+        regSnap.forEach((docSnap) => {
+            const data = docSnap.data();
+
+            if (data.type === 'individual' && data.userId) {
+                const user = userMap.get(data.userId);
+                if (user) {
+                    results.push({
+                        id: docSnap.id,
+                        type: 'individual',
+                        chestNo: data.userChestNo || data.chestNo || "-",
+                        uid: user.uid,
+                        name: user.name || "Unknown",
+                        email: user.email || "-",
+                        mobile: user.mobile || "-",
+                        collegeId: user.collegeId || "-",
+                        department: user.department || "-",
+                        semester: user.semester || "-",
+                        house: user.house || "-",
+                        registeredAt: data.registeredAt
+                    });
+                }
+            } else if (data.type === 'team' && data.leaderId) {
+                const leader = userMap.get(data.leaderId);
+                const members: any[] = [];
+
+                if (data.memberIds && Array.isArray(data.memberIds)) {
+                    data.memberIds.forEach((mid: string) => {
+                        if (mid === data.leaderId) return; // Skip leader
+                        const mUser = userMap.get(mid);
+                        if (mUser) {
+                            members.push({
+                                uid: mUser.uid,
+                                name: mUser.name || "Unknown",
+                                email: mUser.email || "-",
+                                chestNo: (data.memberChestNos && data.memberChestNos[mid]) || "-",
+                                collegeId: mUser.collegeId || "-",
+                                mobile: mUser.mobile || "-",
+                                house: mUser.house || "-",
+                                department: mUser.department || "-",
+                                semester: mUser.semester || "-"
+                            });
+                        }
+                    });
+                }
+
+                if (leader) {
+                    results.push({
+                        id: docSnap.id,
+                        type: 'team',
+                        chestNo: data.teamChestNo || data.chestNo || "-", // Team Chest No
+                        teamChestNo: data.teamChestNo,
+                        leaderChestNo: data.leaderChestNo,
+                        uid: leader.uid,
+                        name: leader.name || "Unknown (Leader)",
+                        teamName: data.teamName,
+                        email: leader.email || "-",
+                        mobile: leader.mobile || "-",
+                        collegeId: leader.collegeId || "-",
+                        department: leader.department || "-",
+                        semester: leader.semester || "-",
+                        house: leader.house || "-",
+                        members: members,
+                        registeredAt: data.registeredAt
+                    });
+                }
+            }
+        });
+
+        return results;
+
+    } catch (error) {
+        console.error("Error fetching detailed registrations:", error);
+        return [];
+    }
+};
