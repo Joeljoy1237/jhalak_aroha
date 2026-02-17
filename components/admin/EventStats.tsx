@@ -3,13 +3,25 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { EventStat, fetchEventStats } from "@/lib/adminService";
-import { Search, Download, Users, Layers, RefreshCcw, Eye, Power } from "lucide-react";
+import {
+  Search,
+  Download,
+  Users,
+  Layers,
+  RefreshCcw,
+  Eye,
+  Power,
+} from "lucide-react";
 import * as XLSX from "xlsx";
 import toast from "react-hot-toast";
 import ConfirmToast from "@/components/ConfirmToast";
 import { fetchAllUsersWithData } from "@/lib/adminService";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
-export default function EventStats() {
+import { User } from "firebase/auth";
+
+export default function EventStats({ user }: { user: User | null }) {
   const router = useRouter();
   const [stats, setStats] = useState<EventStat[]>([]);
   const [loading, setLoading] = useState(true);
@@ -17,10 +29,20 @@ export default function EventStats() {
   const [typeFilter, setTypeFilter] = useState<"all" | "individual" | "group">(
     "all",
   );
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
+    const checkRole = async () => {
+      if (user && db) {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          setUserRole(userDoc.data().role);
+        }
+      }
+    };
+    if (user) checkRole();
     loadData();
-  }, []);
+  }, [user]);
 
   const loadData = async () => {
     setLoading(true);
@@ -267,35 +289,36 @@ export default function EventStats() {
                   {stat.participantCount}
                 </td>
                 <td className="p-4 text-center">
-                  <button
-                    onClick={async () => {
-                      const { toggleEventRegistration } = await import(
-                        "@/lib/adminService"
-                      );
-                      const res = await toggleEventRegistration(
-                        stat.title,
-                        stat.isRegistrationClosed,
-                      );
-                      if (res.success) {
-                        toast.success(res.message || "Status updated");
-                        loadData();
-                      } else {
-                        toast.error(res.message || "Failed to update status");
+                  {userRole === "admin" && (
+                    <button
+                      onClick={async () => {
+                        const { toggleEventRegistration } =
+                          await import("@/lib/adminService");
+                        const res = await toggleEventRegistration(
+                          stat.title,
+                          stat.isRegistrationClosed,
+                        );
+                        if (res.success) {
+                          toast.success(res.message || "Status updated");
+                          loadData();
+                        } else {
+                          toast.error(res.message || "Failed to update status");
+                        }
+                      }}
+                      className={`p-2 rounded-full transition-all ${
+                        stat.isRegistrationClosed
+                          ? "bg-gray-800 text-gray-500 hover:text-red-500"
+                          : "bg-green-500/10 text-green-500 hover:bg-green-500/20"
+                      }`}
+                      title={
+                        stat.isRegistrationClosed
+                          ? "Registration Closed - Click to Open"
+                          : "Registration Open - Click to Close"
                       }
-                    }}
-                    className={`p-2 rounded-full transition-all ${
-                      stat.isRegistrationClosed
-                        ? "bg-gray-800 text-gray-500 hover:text-red-500"
-                        : "bg-green-500/10 text-green-500 hover:bg-green-500/20"
-                    }`}
-                    title={
-                      stat.isRegistrationClosed
-                        ? "Registration Closed - Click to Open"
-                        : "Registration Open - Click to Close"
-                    }
-                  >
-                    <Power size={18} />
-                  </button>
+                    >
+                      <Power size={18} />
+                    </button>
+                  )}
                 </td>
                 <td className="p-4 text-right">
                   <button
@@ -320,36 +343,41 @@ export default function EventStats() {
                   >
                     <Download size={14} /> EXPORT
                   </button>
-                  <button
-                    onClick={() => {
-                      toast.custom(
-                        (t) => (
-                          <ConfirmToast
-                            t={t}
-                            message={`⚠️ DANGER: Are you sure you want to WIPE ALL DATA for ${stat.title}?\n\nThis will:\n1. Delete all participants/teams for this event.\n2. Remove the event from users' profiles.\n3. Reset the chest number counter to 0.\n\nThis action cannot be undone.`}
-                            onConfirm={async () => {
-                              const { resetEventCounter } =
-                                await import("@/lib/adminService");
-                              const res = await resetEventCounter(stat.title);
-                              if (res.success) {
-                                toast.success(res.message || "Reset complete");
-                                loadData(); // Reload stats
-                              } else {
-                                toast.error(
-                                  "Failed: " + (res.message || "Unknown error"),
-                                );
-                              }
-                            }}
-                          />
-                        ),
-                        { duration: Infinity },
-                      );
-                    }}
-                    className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold border border-white/20 text-red-500 hover:bg-red-600 hover:text-white transition-colors ml-2"
-                    title="Reset Counter & Wipe Data"
-                  >
-                    <RefreshCcw size={14} />
-                  </button>
+                  {userRole === "admin" && (
+                    <button
+                      onClick={() => {
+                        toast.custom(
+                          (t) => (
+                            <ConfirmToast
+                              t={t}
+                              message={`⚠️ DANGER: Are you sure you want to WIPE ALL DATA for ${stat.title}?\n\nThis will:\n1. Delete all participants/teams for this event.\n2. Remove the event from users' profiles.\n3. Reset the chest number counter to 0.\n\nThis action cannot be undone.`}
+                              onConfirm={async () => {
+                                const { resetEventCounter } =
+                                  await import("@/lib/adminService");
+                                const res = await resetEventCounter(stat.title);
+                                if (res.success) {
+                                  toast.success(
+                                    res.message || "Reset complete",
+                                  );
+                                  loadData(); // Reload stats
+                                } else {
+                                  toast.error(
+                                    "Failed: " +
+                                      (res.message || "Unknown error"),
+                                  );
+                                }
+                              }}
+                            />
+                          ),
+                          { duration: Infinity },
+                        );
+                      }}
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold border border-white/20 text-red-500 hover:bg-red-600 hover:text-white transition-colors ml-2"
+                      title="Reset Counter & Wipe Data"
+                    >
+                      <RefreshCcw size={14} />
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
