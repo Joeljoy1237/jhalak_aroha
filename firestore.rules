@@ -28,14 +28,14 @@ service cloud.firestore {
     // Registrations Collection (Solo Events)
     // Doc ID is the userId
     match /registrations/{userId} {
-      allow read, write: if isOwner(userId);
+      allow read, write: if isOwner(userId) || isAdmin();
     }
 
     // Teams Collection (Group Events)
     match /teams/{teamId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn();
-      allow update, delete: if isSignedIn() && resource.data.leaderId == request.auth.uid;
+      allow update, delete: if (isSignedIn() && resource.data.leaderId == request.auth.uid) || isAdmin();
     }
 
     // Counters for Chest Numbers
