@@ -5,6 +5,10 @@ import { Check, Lock, Users, Plus, X, Search, AlertCircle } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import Toast, { ToastType } from "@/components/ui/Toast";
+import {
+  fetchUserRegistrations,
+  validateRegistrationRules,
+} from "@/lib/registrationService";
 
 interface EventRegistrationCardProps {
   event: EventItem;
@@ -109,17 +113,37 @@ export default function EventRegistrationCard({
             `Cannot add member. They are from ${userData.house}, but you are from ${currentUser.house}.`,
           );
         } else {
-          setTeamMembers((prev) => [
-            ...prev,
-            {
-              email: userData.email,
-              uid: userDoc.id,
-              name: userData.name,
-              status: "pending",
-            },
-          ]);
-          setSearchEmail(""); // Clear input on success
-          showToast("Team member added!", "success");
+          // Check registration limits
+          try {
+            const registrations = await fetchUserRegistrations(userDoc.id);
+            // Check if adding this event is valid for them
+            const validation = validateRegistrationRules(
+              registrations.soloEvents,
+              registrations.teamEvents,
+              null, // use existing solo
+              event.title, // new team event
+            );
+
+            if (!validation.valid) {
+              setSearchError(`Limit reached: ${validation.message}`);
+              return;
+            }
+
+            setTeamMembers((prev) => [
+              ...prev,
+              {
+                email: userData.email,
+                uid: userDoc.id,
+                name: userData.name,
+                status: "pending",
+              },
+            ]);
+            setSearchEmail(""); // Clear input on success
+            showToast("Team member added!", "success");
+          } catch (err) {
+            console.error("Validation error", err);
+            setSearchError("Could not validate user limits. Try again.");
+          }
         }
       }
     } catch (err) {

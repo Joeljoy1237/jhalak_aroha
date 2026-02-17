@@ -186,14 +186,13 @@ export const createTeam = async (
 
             // B. Update User Docs with new chest numbers
             // B. Update User Docs with new chest numbers
+            // B. Update User Docs with new chest numbers
             for (const [uid, newNo] of Object.entries(memberChestNoUpdates)) {
-                // Only update the leader's document to avoid permission errors
-                // as normal users cannot update other users' documents.
-                // The chest number is still recorded in the event registration.
-                if (uid === leaderUid) {
-                    const userDocRef = doc(firestore, "users", uid);
-                    transaction.set(userDocRef, { chestNo: newNo }, { merge: true });
-                }
+                // Update every member's document with their assigned chest number.
+                // This ensures that if they register for other events later, their chest number is preserved.
+                // This requires Firestore rules to allow the leader to update other users' chestNo field (or public access).
+                const userDocRef = doc(firestore, "users", uid);
+                transaction.set(userDocRef, { chestNo: newNo }, { merge: true });
             }
 
             // C. Update Team Counter
