@@ -5,13 +5,13 @@ import { getAnalytics, Analytics } from "firebase/analytics";
 
 // Explicit configuration provided by user
 const firebaseConfig = {
-  apiKey: "AIzaSyD7Ao02q84OXAlQNzaPUn8VeIuCkUAKSxo",
-  authDomain: "jhalak-60b17.firebaseapp.com",
-  projectId: "jhalak-60b17",
-  storageBucket: "jhalak-60b17.firebasestorage.app",
-  messagingSenderId: "214962545092",
-  appId: "1:214962545092:web:9e002537030dcbc349c491",
-  measurementId: "G-VD9YLCS3PV"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
 let app: FirebaseApp;
