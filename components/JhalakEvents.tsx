@@ -4,54 +4,22 @@ import { useRef, useLayoutEffect, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Image from "next/image";
+import {
+  jhalakEvents,
+  EventRule,
+  EventCategory,
+} from "@/data/jhalakEventsData";
 
 gsap.registerPlugin(ScrollTrigger);
 
-const offstageEvents = [
-  "Essay Writing",
-  "Story Writing",
-  "Poem Writing",
-  "Drawing: Pencil Sketching",
-  "Drawing: Water Colour",
-  "Digital Painting",
-  "Poster Designing",
-  "Collage",
-  "Calligraphy",
-  "Cartoon",
-  "Debate",
-  "Quiz",
-  "Extempore",
-  "Logo Making",
-  "Glass Painting",
-  "Face Painting",
-  "Mehendi Designing",
-  "Art from Waste",
-  "Caption Writing",
-];
-
-const onstageEvents = [
-  "Mime",
-  "Group Dance",
-  "Nostalgia Dance",
-  "Light Music",
-  "Karaoke",
-  "Step n Synchro",
-  "Group Song",
-  "Recitation",
-  "Fancy Dress",
-  "Monoact",
-  "Thiruvathira",
-  "Instrumental Solo",
-  "Dance Solo",
-  "RJying",
-  "Oppana",
-  "Margam Kali",
-  "Fashion Show",
-];
-
 export default function JhalakEvents() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [activeTab, setActiveTab] = useState<"onstage" | "offstage">("onstage");
+  const [activeTab, setActiveTab] = useState<EventCategory>("onstage");
+  const [selectedEvent, setSelectedEvent] = useState<EventRule | null>(null);
+
+  const filteredEvents = jhalakEvents.filter(
+    (event) => event.category === activeTab,
+  );
 
   useLayoutEffect(() => {
     const ctx = gsap.context(() => {
@@ -116,19 +84,24 @@ export default function JhalakEvents() {
           </div>
 
           {/* Custom Tab Switcher */}
-          <div className="flex gap-2 p-2 bg-white/5 rounded-full border border-white/10 backdrop-blur-sm">
-            <button
-              onClick={() => setActiveTab("onstage")}
-              className={`px-8 py-3 rounded-full text-sm uppercase tracking-wider font-bold transition-all duration-300 relative overflow-hidden ${activeTab === "onstage" ? "text-white shadow-[0_0_20px_rgba(186,23,13,0.3)] bg-[#BA170D]" : "text-gray-400 hover:text-white"}`}
-            >
-              On-Stage
-            </button>
-            <button
-              onClick={() => setActiveTab("offstage")}
-              className={`px-8 py-3 rounded-full text-sm uppercase tracking-wider font-bold transition-all duration-300 ${activeTab === "offstage" ? "text-white shadow-[0_0_20px_rgba(186,23,13,0.3)] bg-[#BA170D]" : "text-gray-400 hover:text-white"}`}
-            >
-              Off-Stage
-            </button>
+          <div className="flex gap-2 p-2 bg-white/5 rounded-full border border-white/10 backdrop-blur-sm overflow-x-auto">
+            {(["onstage", "offstage", "online"] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-8 py-3 rounded-full text-sm uppercase tracking-wider font-bold transition-all duration-300 relative overflow-hidden whitespace-nowrap ${
+                  activeTab === tab
+                    ? "text-white shadow-[0_0_20px_rgba(186,23,13,0.3)] bg-[#BA170D]"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
+                {tab === "online"
+                  ? "Online / Special"
+                  : tab === "onstage"
+                    ? "On-Stage"
+                    : "Off-Stage"}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -154,12 +127,16 @@ export default function JhalakEvents() {
               <h3 className="text-4xl font-cinzel font-bold mb-4 leading-tight">
                 {activeTab === "onstage"
                   ? "The Spotlight Awaits"
-                  : "Creativity Beyond Boundaries"}
+                  : activeTab === "offstage"
+                    ? "Creativity Beyond Boundaries"
+                    : "Digital Expressions"}
               </h3>
               <p className="text-gray-300 leading-relaxed text-lg font-light">
                 {activeTab === "onstage"
                   ? "Step into the limelight and let your talent shine. From dance to drama, the stage is yours to conquer."
-                  : "Art, literature, and intellect converge. Express yourself through strokes, words, and ideas."}
+                  : activeTab === "offstage"
+                    ? "Art, literature, and intellect converge. Express yourself through strokes, words, and ideas."
+                    : "Showcase your creativity through the lens. Recreate, innovate, and captivate from anywhere."}
               </p>
             </div>
           </div>
@@ -168,31 +145,108 @@ export default function JhalakEvents() {
           <div className="lg:col-span-7 bg-white/[0.02] rounded-sm border border-white/5 p-8 md:p-12 relative overflow-hidden h-[600px]">
             {/* Decorative Number */}
             <div className="absolute -top-10 -right-10 text-[200px] font-black text-white/[0.02] pointer-events-none select-none font-cinzel">
-              {activeTab === "onstage" ? "01" : "02"}
+              {activeTab === "onstage"
+                ? "01"
+                : activeTab === "offstage"
+                  ? "02"
+                  : "03"}
             </div>
 
             <div className="h-full overflow-y-auto custom-scrollbar pr-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
-                {(activeTab === "onstage" ? onstageEvents : offstageEvents).map(
-                  (event, i) => (
-                    <div
-                      key={`${activeTab}-${i}`}
-                      className="event-item group flex items-center gap-4 p-4 border-b border-white/5 hover:border-[#BA170D]/30 hover:bg-white/[0.02] transition-all cursor-default"
-                    >
-                      <span className="text-[#BA170D] font-mono text-xs opacity-50 group-hover:opacity-100">
-                        / {(i + 1).toString().padStart(2, "0")}
-                      </span>
-                      <span className="text-lg font-light text-gray-400 group-hover:text-white transition-colors">
-                        {event}
-                      </span>
-                    </div>
-                  ),
-                )}
+                {filteredEvents.map((event, i) => (
+                  <button
+                    key={`${activeTab}-${i}`}
+                    onClick={() => setSelectedEvent(event)}
+                    className="event-item group flex items-center gap-4 p-4 border-b border-white/5 hover:border-[#BA170D]/30 hover:bg-white/[0.02] transition-all cursor-pointer text-left w-full"
+                  >
+                    <span className="text-[#BA170D] font-mono text-xs opacity-50 group-hover:opacity-100">
+                      / {(i + 1).toString().padStart(2, "0")}
+                    </span>
+                    <span className="text-lg font-light text-gray-400 group-hover:text-white transition-colors">
+                      {event.title}
+                    </span>
+                  </button>
+                ))}
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Event Details Modal */}
+      {selectedEvent && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
+          onClick={() => setSelectedEvent(null)}
+        >
+          <div
+            className="bg-[#111] border border-white/10 rounded-lg max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col shadow-2xl relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="p-6 border-b border-white/10 flex justify-between items-start bg-[#BA170D]/10">
+              <div>
+                <span className="text-[#BA170D] font-mono text-xs uppercase tracking-wider mb-2 block">
+                  {selectedEvent.category === "online"
+                    ? "Online / Special"
+                    : selectedEvent.category === "onstage"
+                      ? "On-Stage Event"
+                      : "Off-Stage Event"}
+                </span>
+                <h3 className="text-2xl md:text-3xl font-cinzel font-bold text-white">
+                  {selectedEvent.title}
+                </h3>
+              </div>
+              <button
+                onClick={() => setSelectedEvent(null)}
+                className="text-white/50 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-full"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M18 6 6 18" />
+                  <path d="m6 6 18 18" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 overflow-y-auto custom-scrollbar">
+              <h4 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                <span className="w-1 h-6 bg-[#BA170D] rounded-full"></span>
+                Rules & Regulations
+              </h4>
+              <ul className="space-y-3">
+                {selectedEvent.rules.map((rule, index) => (
+                  <li
+                    key={index}
+                    className="flex gap-3 text-gray-300 font-light leading-relaxed"
+                  >
+                    <span className="text-[#BA170D] mt-1.5">•</span>
+                    <span>{rule}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-6 border-t border-white/10 bg-[#0A0A0A]">
+              <p className="text-white/30 text-xs text-center font-mono">
+                * Judges' decision will be final and binding.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

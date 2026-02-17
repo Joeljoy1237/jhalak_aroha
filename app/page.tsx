@@ -5,7 +5,8 @@ import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import About from "@/components/About";
 import ArohaRules from "@/components/ArohaRules";
-import JhalakEvents from "@/components/JhalakEvents";
+import JhalakEvents from "@/components/JhalakEventsNew";
+import JhalakRules from "@/components/JhalakRules";
 import ChiefGuests from "@/components/ChiefGuests";
 import Footer from "@/components/Footer";
 import SplashScreen from "@/components/SplashScreen";
@@ -30,6 +31,7 @@ export default function Home() {
 
       {/* Internal Events */}
       <JhalakEvents />
+      <JhalakRules />
 
       {/* Chief Guests & Judges */}
 

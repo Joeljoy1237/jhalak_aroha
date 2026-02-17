@@ -159,7 +159,7 @@ export default function ArohaRules() {
           <div className="flex flex-col md:flex-row gap-8 md:gap-16 justify-center items-center">
             <div className="flex flex-col items-center group">
               <span className="font-cinzel font-bold text-white text-xl mb-1 group-hover:text-[#BA170D] transition-colors">
-                ADITH
+                AADHITH
               </span>
               <a
                 href="tel:9495268368"
