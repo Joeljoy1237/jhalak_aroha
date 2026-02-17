@@ -115,46 +115,85 @@ export const createTeam = async (
 
     try {
         return await runTransaction(firestore, async (transaction) => {
-            // 1. Reads
-            // Fetch User Regs for validation
-            const soloDocRef = doc(firestore, "registrations", leaderUid);
-            const soloDoc = await transaction.get(soloDocRef);
-            const soloEvents = soloDoc.exists() ? (soloDoc.data() as SoloRegistration).events : [];
+            // ==========================================
+            // 1. ALL READS & PRE-VALIDATION
+            // ==========================================
 
-            const teamsRef = collection(firestore, "teams");
-            // const q = query(teamsRef, where("memberIds", "array-contains", leaderUid));
-            // Transaction queries are tricky/unsupported often in client SDKs for some cases, but direct get is better.
-            // For validation, we'll relax the strict transactional read of *all* teams and rely on pre-fetch or optimistic.
-            // However, ensuring chest number uniqueness requires the Counter read to be in transaction.
+            // Read Team Counter
+            const teamCounterRef = doc(firestore, "counters", `team_${eventTitle}`);
+            const teamCounterDoc = await transaction.get(teamCounterRef);
 
-            // Re-fetch current teams for validation (outside transaction usually, but here we need safety)
-            // Note: Client SDK transactions fail if you read after write. READ EVERYTHING FIRST.
+            // Read Global User Counter
+            const globalCounterRef = doc(firestore, "counters", "user_chest_numbers");
+            let globalCounterDoc = await transaction.get(globalCounterRef);
+            let currentGlobalCount = globalCounterDoc.exists() ? (globalCounterDoc.data().count || 0) : 0;
 
-            // Since we can't easily query within transaction for "all teams user is in", 
-            // we will proceed with the validation based on client state passed or do a quick separate check if critical.
-            // For this implementation, we will trust the client-side validation for *Limits*, 
-            // but the Chest Number generation MUST be transactional.
+            // Collect all unique member IDs
+            const allMemberIds = [leaderUid, ...members.map(m => m.uid).filter(uid => uid !== leaderUid)];
+            const uniqueMemberIds = Array.from(new Set(allMemberIds));
+
+            // Read User Docs
+            const userChestNoMap: { [uid: string]: string | null } = {};
+            for (const uid of uniqueMemberIds) {
+                const userDocRef = doc(firestore, "users", uid);
+                const userDoc = await transaction.get(userDocRef);
+                if (userDoc.exists() && userDoc.data().chestNo) {
+                    userChestNoMap[uid] = userDoc.data().chestNo;
+                } else {
+                    userChestNoMap[uid] = null;
+                }
+            }
 
             const eventInfo = getEventDetails(eventTitle);
             if (!eventInfo) throw new Error("Event not found");
 
-            // Counter Ref
-            const counterRef = doc(firestore, "counters", eventTitle);
-            const counterDoc = await transaction.get(counterRef);
-            let currentCount = 0;
-            if (counterDoc.exists()) {
-                currentCount = counterDoc.data().count || 0;
-            }
-
-            // 2. Logic & Validation
+            // ==========================================
+            // 2. LOGIC & CALCULATIONS
+            // ==========================================
             if (members.length < (eventInfo.minParticipants || 1)) throw new Error("Too few members");
 
-            // 3. Writes
-            const newCount = currentCount + 1;
-            const shortCode = eventInfo.shortCode || "GEN";
-            const chestNo = `${shortCode}${100 + newCount}`;
+            // Calculate Chest Numbers
+            const memberChestNoUpdates: { [uid: string]: string } = {};
+            const finalMemberChestNos: { [uid: string]: string } = {};
 
-            // Create Team Doc
+            // Assign numbers based on pre-fetched map
+            for (const uid of uniqueMemberIds) {
+                if (userChestNoMap[uid]) {
+                    finalMemberChestNos[uid] = userChestNoMap[uid] as string;
+                } else {
+                    // Assign new number
+                    currentGlobalCount++;
+                    const newChestNo = currentGlobalCount.toString().padStart(3, '0');
+                    finalMemberChestNos[uid] = newChestNo;
+                    memberChestNoUpdates[uid] = newChestNo;
+                }
+            }
+
+            // Generate Team Chest Number
+            const teamCount = teamCounterDoc.exists() ? (teamCounterDoc.data().count || 0) : 0;
+            const newTeamCount = teamCount + 1;
+            const shortCode = eventInfo.shortCode || "GRP";
+            const teamChestNo = `${shortCode}${(100 + newTeamCount).toString().padStart(3, '0')}`;
+
+            // ==========================================
+            // 3. ALL WRITES
+            // ==========================================
+
+            // A. Update Global User Check Number Counter (if any new user numbers assigned)
+            if (Object.keys(memberChestNoUpdates).length > 0) {
+                transaction.set(globalCounterRef, { count: currentGlobalCount }, { merge: true });
+            }
+
+            // B. Update User Docs with new chest numbers
+            for (const [uid, newNo] of Object.entries(memberChestNoUpdates)) {
+                const userDocRef = doc(firestore, "users", uid);
+                transaction.set(userDocRef, { chestNo: newNo }, { merge: true });
+            }
+
+            // C. Update Team Counter
+            transaction.set(teamCounterRef, { count: newTeamCount }, { merge: true });
+
+            // D. Create Team Doc
             const newTeamRef = doc(collection(firestore, "teams"));
             const teamData = {
                 id: newTeamRef.id,
@@ -164,26 +203,25 @@ export const createTeam = async (
                 members: members,
                 memberIds: members.map(m => m.uid),
                 status: "confirmed",
-                chestNo: chestNo,
+                teamChestNo: teamChestNo,
                 createdAt: new Date().toISOString()
             };
             transaction.set(newTeamRef, teamData);
 
-            // Create Admin Registration Doc (for Excel/Admin View)
-            const regId = getRegId(eventTitle, newTeamRef.id); // Use Team ID for uniqueness
+            // E. Create Admin Registration Doc
+            const regId = getRegId(eventTitle, newTeamRef.id);
             const regRef = doc(firestore, "event_registrations", regId);
             transaction.set(regRef, {
                 type: 'team',
                 teamId: newTeamRef.id,
-                chestNo: chestNo,
                 eventTitle: eventTitle,
                 leaderId: leaderUid,
+                teamChestNo: teamChestNo,
+                leaderChestNo: finalMemberChestNos[leaderUid],
+                memberChestNos: finalMemberChestNos,
                 memberIds: members.map(m => m.uid),
                 registeredAt: serverTimestamp()
             });
-
-            // Update Counter
-            transaction.set(counterRef, { count: newCount }, { merge: true });
 
             return { success: true };
         });
@@ -200,7 +238,7 @@ export const updateUserSoloRegistrations = async (uid: string, newEvents: string
 
     try {
         return await runTransaction(firestore, async (transaction) => {
-            // 1. Reads
+            // 1. ALL READS
             const soloDocRef = doc(firestore, "registrations", uid);
             const soloDoc = await transaction.get(soloDocRef);
             const currentEvents = soloDoc.exists() ? ((soloDoc.data() as SoloRegistration).events || []) : [];
@@ -211,27 +249,31 @@ export const updateUserSoloRegistrations = async (uid: string, newEvents: string
 
             if (added.length === 0 && removed.length === 0) return { success: true };
 
-            // Read counters for all ADDED events
-            const chestNumbers: { [event: string]: string } = {};
-            const incrementedCounts: { [event: string]: number } = {};
+            // Read User Doc if chest number is needed
+            const userDocRef = doc(firestore, "users", uid);
+            const userDoc = await transaction.get(userDocRef);
+            let userChestNo = userDoc.exists() ? userDoc.data().chestNo : null;
 
-            for (const eventTitle of added) {
-                const eventInfo = getEventDetails(eventTitle);
-                if (!eventInfo) throw new Error(`Event not found: ${eventTitle}`);
+            // Read Global User Counter if user has no chest number and needs one (i.e. adding events)
+            let globalCounterRef = doc(firestore, "counters", "user_chest_numbers");
+            let globalCounterDoc = null;
+            let currentGlobalCount = 0;
 
-                const counterRef = doc(firestore, "counters", eventTitle);
-                // Note: In client SDK, we must read all documents before any writes.
-                // Since 'added' is dynamic, we iterate reads.
-                const counterDoc = await transaction.get(counterRef);
-                const count = counterDoc.exists() ? counterDoc.data().count : 0;
+            if (!userChestNo && added.length > 0) {
+                globalCounterDoc = await transaction.get(globalCounterRef);
+                currentGlobalCount = globalCounterDoc.exists() ? (globalCounterDoc.data().count || 0) : 0;
 
-                const newCount = count + 1;
-                incrementedCounts[eventTitle] = newCount;
-                const shortCode = eventInfo.shortCode || "GEN";
-                chestNumbers[eventTitle] = `${shortCode}${100 + newCount}`;
+                // Calculate new chest number
+                currentGlobalCount++;
+                userChestNo = currentGlobalCount.toString().padStart(3, '0');
             }
 
-            // 2. Writes
+            // 3. WRITES
+            // Update User & Counter if new chest number assigned
+            if ((!userDoc.exists() || !userDoc.data().chestNo) && added.length > 0) {
+                transaction.set(globalCounterRef, { count: currentGlobalCount }, { merge: true });
+                transaction.set(userDocRef, { chestNo: userChestNo }, { merge: true });
+            }
 
             // Handle Removed (Undo)
             for (const eventTitle of removed) {
@@ -242,20 +284,13 @@ export const updateUserSoloRegistrations = async (uid: string, newEvents: string
 
             // Handle Added
             for (const eventTitle of added) {
-                const chestNo = chestNumbers[eventTitle];
-                const newCount = incrementedCounts[eventTitle];
-
-                // Update Counter
-                const counterRef = doc(firestore, "counters", eventTitle);
-                transaction.set(counterRef, { count: newCount }, { merge: true });
-
                 // Create Admin Registration Doc
                 const regId = getRegId(eventTitle, uid);
                 const regRef = doc(firestore, "event_registrations", regId);
                 transaction.set(regRef, {
                     type: 'individual',
                     userId: uid,
-                    chestNo: chestNo,
+                    userChestNo: userChestNo,
                     eventTitle: eventTitle,
                     registeredAt: serverTimestamp()
                 });

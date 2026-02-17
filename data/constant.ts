@@ -32,6 +32,7 @@ export interface UserProfile {
     mobile?: string;
     collegeId?: string; // e.g., CMA/22/CS/033
     house?: string;
+    chestNo?: string; // User's unique chest number
     createdAt?: string;
     updatedAt?: string;
     role?: 'user' | 'organizer' | 'admin';
@@ -53,8 +54,10 @@ export interface TeamRegistration {
     eventTitle: string;
     leaderId: string; // UID of the creator
     members: TeamMember[];
+    memberIds?: string[]; // Array of member UIDs
     teamName?: string; // Optional team name
     status: "confirmed" | "cancelled";
+    teamChestNo?: string; // Team's chest number with event code (e.g., MIME101)
     createdAt: string;
 }
 
@@ -108,7 +111,7 @@ export const categories: Category[] = [
                 gradient: "from-gray-900 to-black",
                 eventType: 'group',
                 categoryType: 'on_stage',
-                shortCode: 'MIME'
+                shortCode: 'MI'
             },
 
             {
@@ -145,7 +148,7 @@ export const categories: Category[] = [
                 gradient: "from-purple-900 to-black",
                 eventType: 'group',
                 categoryType: 'on_stage',
-                shortCode: 'GRPSG'
+                shortCode: 'GS'
             },
 
             {
@@ -164,7 +167,7 @@ export const categories: Category[] = [
                 gradient: "from-orange-900 to-black",
                 eventType: 'group',
                 categoryType: 'on_stage',
-                shortCode: 'THIR'
+                shortCode: 'TH'
             },
 
             {
@@ -201,7 +204,7 @@ export const categories: Category[] = [
                 gradient: "from-green-900 to-black",
                 eventType: 'group',
                 categoryType: 'on_stage',
-                shortCode: 'GRPDA'
+                shortCode: 'GD'
             },
 
             {
@@ -222,7 +225,7 @@ export const categories: Category[] = [
                 gradient: "from-teal-900 to-black",
                 eventType: 'group',
                 categoryType: 'on_stage',
-                shortCode: 'STEP'
+                shortCode: 'SNS'
             },
 
             {
@@ -242,7 +245,7 @@ export const categories: Category[] = [
                 gradient: "from-pink-900 to-black",
                 eventType: 'group',
                 categoryType: 'on_stage',
-                shortCode: 'NOST'
+                shortCode: 'NO'
             },
 
             {
@@ -283,7 +286,7 @@ export const categories: Category[] = [
                 gradient: "from-rose-900 to-black",
                 eventType: 'group',
                 categoryType: 'on_stage',
-                shortCode: 'OPPA'
+                shortCode: 'OP'
             },
 
             {
@@ -322,7 +325,7 @@ export const categories: Category[] = [
                 gradient: "from-amber-900 to-black",
                 eventType: 'group',
                 categoryType: 'on_stage',
-                shortCode: 'FASH'
+                shortCode: 'FS'
             },
 
             {
@@ -375,7 +378,7 @@ export const categories: Category[] = [
                 gradient: "from-violet-900 to-black",
                 eventType: 'group',
                 categoryType: 'on_stage',
-                shortCode: 'MARG'
+                shortCode: 'MK'
             },
 
             {
@@ -431,7 +434,7 @@ export const categories: Category[] = [
                 gradient: "from-stone-900 to-black",
                 eventType: 'group',
                 categoryType: 'on_stage',
-                shortCode: 'VATT'
+                shortCode: 'VA'
             },
 
             {
@@ -486,7 +489,7 @@ export const categories: Category[] = [
                 gradient: "from-amber-800 to-black",
                 eventType: 'group',
                 categoryType: 'on_stage',
-                shortCode: 'NADAN'
+                shortCode: 'GFS'
             },
 
             {
@@ -550,9 +553,9 @@ export const categories: Category[] = [
         title: "Off-Stage Events",
         items: [
             {
-                title: "Essay Writing / Story Writing (English, Malayalam, Hindi)",
-                description: "Write an essay or story on a given topic.",
-                tags: ["Writing", "Literary", "Solo"],
+                title: "Essay Writing (English)",
+                description: "Write an essay in English on a given topic.",
+                tags: ["Writing", "Essay", "Solo", "English"],
                 minParticipants: 1,
                 maxParticipants: 1,
                 timeLimit: "1 hour",
@@ -567,13 +570,118 @@ export const categories: Category[] = [
                 gradient: "from-blue-800 to-black",
                 eventType: 'individual',
                 categoryType: 'off_stage',
-                shortCode: 'ESSW'
+                shortCode: 'ESS_EN'
             },
 
             {
-                title: "Poem Writing (English, Malayalam, Hindi)",
-                description: "Compose a poem on a given theme or starting line.",
-                tags: ["Writing", "Poetry", "Solo"],
+                title: "Essay Writing (Malayalam)",
+                description: "Write an essay in Malayalam on a given topic.",
+                tags: ["Writing", "Essay", "Solo", "Malayalam"],
+                minParticipants: 1,
+                maxParticipants: 1,
+                timeLimit: "1 hour",
+                rules: [
+                    "Topic announced 10 minutes before start",
+                    "800-1000 words",
+                    "No mobile phones, books, or electronic devices",
+                    "Plagiarism leads to disqualification",
+                    "Cannot leave hall during first 30 minutes",
+                    "Bring A4 sheet, use blue/black ink only"
+                ],
+                gradient: "from-blue-700 to-black",
+                eventType: 'individual',
+                categoryType: 'off_stage',
+                shortCode: 'ESS_ML'
+            },
+
+            {
+                title: "Essay Writing (Hindi)",
+                description: "Write an essay in Hindi on a given topic.",
+                tags: ["Writing", "Essay", "Solo", "Hindi"],
+                minParticipants: 1,
+                maxParticipants: 1,
+                timeLimit: "1 hour",
+                rules: [
+                    "Topic announced 10 minutes before start",
+                    "800-1000 words",
+                    "No mobile phones, books, or electronic devices",
+                    "Plagiarism leads to disqualification",
+                    "Cannot leave hall during first 30 minutes",
+                    "Bring A4 sheet, use blue/black ink only"
+                ],
+                gradient: "from-blue-600 to-black",
+                eventType: 'individual',
+                categoryType: 'off_stage',
+                shortCode: 'ESS_HI'
+            },
+
+            {
+                title: "Story Writing (English)",
+                description: "Write a creative story in English on a given topic.",
+                tags: ["Writing", "Story", "Solo", "English"],
+                minParticipants: 1,
+                maxParticipants: 1,
+                timeLimit: "1 hour",
+                rules: [
+                    "Topic announced 10 minutes before start",
+                    "800-1000 words",
+                    "No mobile phones, books, or electronic devices",
+                    "Plagiarism leads to disqualification",
+                    "Cannot leave hall during first 30 minutes",
+                    "Bring A4 sheet, use blue/black ink only"
+                ],
+                gradient: "from-purple-800 to-black",
+                eventType: 'individual',
+                categoryType: 'off_stage',
+                shortCode: 'STRY_EN'
+            },
+
+            {
+                title: "Story Writing (Malayalam)",
+                description: "Write a creative story in Malayalam on a given topic.",
+                tags: ["Writing", "Story", "Solo", "Malayalam"],
+                minParticipants: 1,
+                maxParticipants: 1,
+                timeLimit: "1 hour",
+                rules: [
+                    "Topic announced 10 minutes before start",
+                    "800-1000 words",
+                    "No mobile phones, books, or electronic devices",
+                    "Plagiarism leads to disqualification",
+                    "Cannot leave hall during first 30 minutes",
+                    "Bring A4 sheet, use blue/black ink only"
+                ],
+                gradient: "from-purple-700 to-black",
+                eventType: 'individual',
+                categoryType: 'off_stage',
+                shortCode: 'STRY_ML'
+            },
+
+            {
+                title: "Story Writing (Hindi)",
+                description: "Write a creative story in Hindi on a given topic.",
+                tags: ["Writing", "Story", "Solo", "Hindi"],
+                minParticipants: 1,
+                maxParticipants: 1,
+                timeLimit: "1 hour",
+                rules: [
+                    "Topic announced 10 minutes before start",
+                    "800-1000 words",
+                    "No mobile phones, books, or electronic devices",
+                    "Plagiarism leads to disqualification",
+                    "Cannot leave hall during first 30 minutes",
+                    "Bring A4 sheet, use blue/black ink only"
+                ],
+                gradient: "from-purple-600 to-black",
+                eventType: 'individual',
+                categoryType: 'off_stage',
+                shortCode: 'STRY_HI'
+            },
+
+            {
+                title: "Poem Writing (English)",
+                description: "Compose a poem in English on a given theme or starting line.",
+                tags: ["Writing", "Poetry", "Solo", "English"],
                 minParticipants: 1,
                 maxParticipants: 1,
                 timeLimit: "1 hour",
@@ -587,21 +695,102 @@ export const categories: Category[] = [
                 gradient: "from-green-800 to-black",
                 eventType: 'individual',
                 categoryType: 'off_stage',
-                shortCode: 'POEM'
+                shortCode: 'POEM_EN'
             },
 
             {
-                title: "Drawing - Pencil Sketching, Water Colour",
-                description: "Create a drawing based on a given theme.",
-                tags: ["Art", "Drawing", "Solo"],
+                title: "Poem Writing (Malayalam)",
+                description: "Compose a poem in Malayalam on a given theme or starting line.",
+                tags: ["Writing", "Poetry", "Solo", "Malayalam"],
+                minParticipants: 1,
+                maxParticipants: 1,
+                timeLimit: "1 hour",
+                rules: [
+                    "Theme/starting line given 10 minutes before",
+                    "1-2 pages",
+                    "Bring A4 sheet",
+                    "No plagiarism, no phones",
+                    "No vulgarity or hate speech"
+                ],
+                gradient: "from-green-700 to-black",
+                eventType: 'individual',
+                categoryType: 'off_stage',
+                shortCode: 'POEM_ML'
+            },
+
+            {
+                title: "Poem Writing (Hindi)",
+                description: "Compose a poem in Hindi on a given theme or starting line.",
+                tags: ["Writing", "Poetry", "Solo", "Hindi"],
+                minParticipants: 1,
+                maxParticipants: 1,
+                timeLimit: "1 hour",
+                rules: [
+                    "Theme/starting line given 10 minutes before",
+                    "1-2 pages",
+                    "Bring A4 sheet",
+                    "No plagiarism, no phones",
+                    "No vulgarity or hate speech"
+                ],
+                gradient: "from-green-600 to-black",
+                eventType: 'individual',
+                categoryType: 'off_stage',
+                shortCode: 'POEM_HI'
+            },
+
+            {
+                title: "Pencil Sketching",
+                description: "Create a pencil sketch based on a given theme.",
+                tags: ["Art", "Sketching", "Solo", "Pencil"],
                 minParticipants: 1,
                 maxParticipants: 1,
                 timeLimit: "2 hours",
                 rules: [
                     "Theme given 10 minutes before",
-                    "Bring own pencils and materials; drawing sheet provided",
+                    "Bring own pencils (HB, 2B, 4B, etc.); drawing sheet provided",
                     "No reference photos",
-                    "Maintain silence"
+                    "Maintain silence",
+                    "Only pencil medium allowed"
+                ],
+                gradient: "from-gray-800 to-black",
+                eventType: 'individual',
+                categoryType: 'off_stage',
+                shortCode: 'PENC'
+            },
+
+            {
+                title: "Water Colour Painting",
+                description: "Create a water colour painting based on a given theme.",
+                tags: ["Art", "Painting", "Solo", "Water Colour"],
+                minParticipants: 1,
+                maxParticipants: 1,
+                timeLimit: "2 hours",
+                rules: [
+                    "Theme given 10 minutes before",
+                    "Bring own water colours, brushes, and palette; drawing sheet provided",
+                    "No reference photos",
+                    "Maintain silence",
+                    "Only water colour medium allowed"
+                ],
+                gradient: "from-cyan-800 to-black",
+                eventType: 'individual',
+                categoryType: 'off_stage',
+                shortCode: 'WATC'
+            },
+
+            {
+                title: "Drawing",
+                description: "Create a drawing using any medium based on a given theme.",
+                tags: ["Art", "Drawing", "Solo", "Mixed Media"],
+                minParticipants: 1,
+                maxParticipants: 1,
+                timeLimit: "2 hours",
+                rules: [
+                    "Theme given 10 minutes before",
+                    "Bring own materials (pencils, charcoal, pastels, etc.); drawing sheet provided",
+                    "No reference photos",
+                    "Maintain silence",
+                    "Any dry medium allowed (no paints)"
                 ],
                 gradient: "from-yellow-800 to-black",
                 eventType: 'individual',
@@ -704,9 +893,9 @@ export const categories: Category[] = [
             },
 
             {
-                title: "Extempore (English, Malayalam, Hindi)",
-                description: "Speak on a topic drawn by lot with minimal preparation.",
-                tags: ["Speaking", "Solo", "Impromptu"],
+                title: "Extempore (English)",
+                description: "Speak in English on a topic drawn by lot with minimal preparation.",
+                tags: ["Speaking", "Solo", "Impromptu", "English"],
                 minParticipants: 1,
                 maxParticipants: 1,
                 timeLimit: "5 minutes speaking, 5 minutes thinking",
@@ -717,7 +906,41 @@ export const categories: Category[] = [
                 gradient: "from-teal-700 to-black",
                 eventType: 'individual',
                 categoryType: 'off_stage',
-                shortCode: 'EXTM'
+                shortCode: 'EXTM_EN'
+            },
+
+            {
+                title: "Extempore (Malayalam)",
+                description: "Speak in Malayalam on a topic drawn by lot with minimal preparation.",
+                tags: ["Speaking", "Solo", "Impromptu", "Malayalam"],
+                minParticipants: 1,
+                maxParticipants: 1,
+                timeLimit: "5 minutes speaking, 5 minutes thinking",
+                rules: [
+                    "Topic picked by lot",
+                    "No paper or materials during speech"
+                ],
+                gradient: "from-teal-600 to-black",
+                eventType: 'individual',
+                categoryType: 'off_stage',
+                shortCode: 'EXTM_ML'
+            },
+
+            {
+                title: "Extempore (Hindi)",
+                description: "Speak in Hindi on a topic drawn by lot with minimal preparation.",
+                tags: ["Speaking", "Solo", "Impromptu", "Hindi"],
+                minParticipants: 1,
+                maxParticipants: 1,
+                timeLimit: "5 minutes speaking, 5 minutes thinking",
+                rules: [
+                    "Topic picked by lot",
+                    "No paper or materials during speech"
+                ],
+                gradient: "from-teal-500 to-black",
+                eventType: 'individual',
+                categoryType: 'off_stage',
+                shortCode: 'EXTM_HI'
             },
 
             {
@@ -734,7 +957,7 @@ export const categories: Category[] = [
                 gradient: "from-cyan-700 to-black",
                 eventType: 'group',
                 categoryType: 'off_stage',
-                shortCode: 'QUIZ'
+                shortCode: 'QU'
             },
 
             {
@@ -755,7 +978,7 @@ export const categories: Category[] = [
                 gradient: "from-rose-700 to-black",
                 eventType: 'group',
                 categoryType: 'off_stage',
-                shortCode: 'DEBA'
+                shortCode: 'DE'
             },
 
             {
@@ -817,20 +1040,21 @@ export const categories: Category[] = [
 
             {
                 title: "Face Painting",
-                description: "Team event: one painter and one model create a face painting.",
-                tags: ["Art", "Face Painting", "Team"],
-                minParticipants: 2,
-                maxParticipants: 2,
+                description: "Create a face painting design on a provided model.",
+                tags: ["Art", "Face Painting", "Solo"],
+                minParticipants: 1,
+                maxParticipants: 1,
                 timeLimit: "2 hours",
                 rules: [
                     "Choose own theme",
                     "Use skin-safe, non-toxic paints",
                     "Bring own materials (brushes, sponges, etc.)",
+                    "Model will be provided by organizers",
                     "Design covers significant part of face",
                     "No vulgar/offensive content"
                 ],
                 gradient: "from-fuchsia-700 to-black",
-                eventType: 'group',
+                eventType: 'individual',
                 categoryType: 'off_stage',
                 shortCode: 'FACE'
             },
@@ -871,7 +1095,7 @@ export const categories: Category[] = [
                 gradient: "from-sky-700 to-black",
                 eventType: 'group',
                 categoryType: 'off_stage',
-                shortCode: 'MCR'
+                shortCode: 'MSR'
             }
 
         ]

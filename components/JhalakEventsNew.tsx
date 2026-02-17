@@ -69,6 +69,7 @@ export default function JhalakEventsNew() {
 
   return (
     <section
+      id="jhalak-events"
       ref={containerRef}
       className="relative bg-[#0A0A0A] text-white py-24 px-6 md:px-12 min-h-screen border-t border-white/5 overflow-hidden selection:bg-[#BA170D] selection:text-white"
     >

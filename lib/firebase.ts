@@ -1,6 +1,6 @@
 import { Auth, GoogleAuthProvider, getAuth, updateProfile, User, onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
 import { FirebaseApp, initializeApp, getApps, getApp } from "firebase/app";
-import { getFirestore, Firestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
+import { getFirestore, Firestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, setLogLevel } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -30,11 +30,24 @@ if (
 
     // Initialize Firestore
     if (typeof window !== "undefined") {
+      // Suppress harmless Firestore warnings in development
+      setLogLevel('error');
+
       // Client-side: Enable offline persistence & long polling
-      db = initializeFirestore(app, {
-        experimentalForceLongPolling: true,
-        localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
-      });
+      try {
+        db = initializeFirestore(app, {
+          experimentalForceLongPolling: true,
+          localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+        });
+      } catch (e: any) {
+        // If already initialized (e.g., during hot reload), use existing instance
+        if (e.code === 'failed-precondition' || e.message?.includes('already been called')) {
+          db = getFirestore(app);
+        } else {
+          console.error("Error initializing Firestore settings:", e);
+          db = getFirestore(app); // Fallback
+        }
+      }
     } else {
       // Server-side: Standard initialization
       db = getFirestore(app);

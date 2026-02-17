@@ -8,6 +8,8 @@ import { useRouter } from "next/navigation";
 import { categories, EventItem, TeamRegistration } from "@/data/constant";
 import Navbar from "@/components/Navbar";
 import { ArrowLeft, Save } from "lucide-react";
+import toast from "react-hot-toast";
+import ConfirmToast from "@/components/ConfirmToast";
 import EventRegistrationCard from "@/components/EventRegistrationCard";
 import {
   fetchUserRegistrations,
@@ -126,7 +128,7 @@ export default function RegisterPage() {
       );
 
       if (!validation.valid) {
-        alert(validation.message);
+        toast.error(validation.message || "Validation failed");
         return;
       }
       newEvents = [...pendingSoloEvents, event.title];
@@ -142,9 +144,10 @@ export default function RegisterPage() {
       pendingSoloEvents,
     );
     if (result.success) {
+      toast.success("Changes saved successfully!");
       refreshData(); // Re-fetch to sync everything
     } else {
-      alert(result.message);
+      toast.error(result.message || "Failed to save changes");
     }
     setSaving(false);
   };
@@ -153,7 +156,7 @@ export default function RegisterPage() {
     if (!user) return;
 
     if (hasChanges) {
-      alert("Please save your pending solo event changes first.");
+      toast.error("Please save your pending solo event changes first.");
       return;
     }
 
@@ -167,7 +170,7 @@ export default function RegisterPage() {
       event.title,
     );
     if (!validation.valid) {
-      alert(validation.message);
+      toast.error(validation.message || "Validation failed");
       setActionLoading(null);
       return;
     }
@@ -197,23 +200,35 @@ export default function RegisterPage() {
       fullTeam as any,
     );
     if (result.success) {
+      toast.success("Team created successfully!");
       refreshData();
     } else {
-      alert(result.message);
+      toast.error(result.message || "Failed to create team");
     }
     setActionLoading(null);
   };
 
-  const handleLeaveTeam = async (teamId: string) => {
+  const handleLeaveTeam = (teamId: string) => {
     if (!user) return;
-    if (confirm("Are you sure you want to leave/disband this team?")) {
-      const result = await leaveTeam(user.uid, teamId);
-      if (result.success) {
-        refreshData();
-      } else {
-        alert(result.message);
-      }
-    }
+
+    toast.custom(
+      (t) => (
+        <ConfirmToast
+          t={t}
+          message="Are you sure you want to leave/disband this team?"
+          onConfirm={async () => {
+            const result = await leaveTeam(user.uid, teamId);
+            if (result.success) {
+              toast.success("Left team successfully");
+              refreshData();
+            } else {
+              toast.error(result.message || "Failed to leave team");
+            }
+          }}
+        />
+      ),
+      { duration: Infinity },
+    );
   };
 
   if (loading)

@@ -8,7 +8,15 @@ import {
   User,
   signOut,
 } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  setDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+} from "firebase/firestore";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -17,7 +25,13 @@ import {
   fetchUserRegistrations,
   UserRegistrations,
 } from "@/lib/registrationService";
-import { TeamRegistration, categories, DEPARTMENTS, SEMESTERS, CSE_SEMESTERS } from "@/data/constant";
+import {
+  TeamRegistration,
+  categories,
+  DEPARTMENTS,
+  SEMESTERS,
+  CSE_SEMESTERS,
+} from "@/data/constant";
 import Navbar from "@/components/Navbar";
 import { ArrowLeft, LogOut } from "lucide-react";
 import Toast, { ToastType } from "@/components/ui/Toast";
@@ -98,7 +112,6 @@ const getEventTheme = (title: string) => {
   };
 };
 
-
 const HOUSES = ["Red", "Blue", "Yellow", "Green"];
 
 export default function ProfilePage() {
@@ -113,6 +126,9 @@ export default function ProfilePage() {
     totalCount: 0,
   });
 
+  // User's single chest number
+  const [userChestNo, setUserChestNo] = useState<string>("");
+
   const [formData, setFormData] = useState({
     name: "",
     department: "",
@@ -120,6 +136,7 @@ export default function ProfilePage() {
     house: "",
     mobile: "+91",
     collegeId: "",
+    chestNo: "",
   });
 
   // Toast State
@@ -158,6 +175,8 @@ export default function ProfilePage() {
             fetchUserRegistrations(currentUser.uid),
           ]);
 
+          setRegistrations(regData);
+
           if (userDoc.exists()) {
             const userData = userDoc.data();
             setFormData({
@@ -167,7 +186,9 @@ export default function ProfilePage() {
               house: userData.house || "",
               mobile: userData.mobile || "+91",
               collegeId: userData.collegeId || "",
+              chestNo: userData.chestNo || "",
             });
+            setUserChestNo(userData.chestNo || "");
           } else {
             setFormData((prev) => ({
               ...prev,
@@ -222,6 +243,34 @@ export default function ProfilePage() {
     setSaving(true);
 
     try {
+      // Check if College ID is unique (only if it's being changed)
+      if (db) {
+        const userDocRef = doc(db, "users", user.uid);
+        const currentUserDoc = await getDoc(userDocRef);
+        const currentCollegeId = currentUserDoc.exists()
+          ? currentUserDoc.data().collegeId
+          : null;
+
+        // Only check for duplicates if the College ID is being changed
+        if (formData.collegeId !== currentCollegeId) {
+          const usersRef = collection(db, "users");
+          const q = query(
+            usersRef,
+            where("collegeId", "==", formData.collegeId),
+          );
+          const querySnapshot = await getDocs(q);
+
+          if (!querySnapshot.empty) {
+            showToast(
+              "This College ID is already registered by another user.",
+              "error",
+            );
+            setSaving(false);
+            return;
+          }
+        }
+      }
+
       // 1. Update Auth Profile (Display Name)
       if (user.displayName !== formData.name) {
         await updateProfile(user, { displayName: formData.name });
@@ -245,9 +294,9 @@ export default function ProfilePage() {
       console.log("Profile updated successfully");
       showToast("Profile Updated Successfully!", "success");
 
-      // Redirect to home page after 1.5 seconds
+      // Redirect to Jhalak events section after 1.5 seconds
       setTimeout(() => {
-        router.push("/");
+        router.push("/#jhalak-events");
       }, 1500);
     } catch (error) {
       console.error("Error updating profile:", error);
@@ -329,13 +378,16 @@ export default function ProfilePage() {
               {/* Logout Button - Absolute Top Right */}
               <button
                 onClick={handleLogout}
-                className="absolute top-6 right-6 p-2 rounded-full bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20 hover:border-red-500/50 transition-all group/logout"
+                className="absolute top-6 right-6 px-4 py-2 rounded-lg bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20 hover:border-red-500/50 transition-all group/logout flex items-center gap-2"
                 title="Logout"
               >
                 <LogOut
-                  size={18}
+                  size={16}
                   className="group-hover/logout:scale-110 transition-transform"
                 />
+                <span className="text-xs font-bold uppercase tracking-wider">
+                  Logout
+                </span>
               </button>
 
               <div className="flex flex-col items-center mb-10">
@@ -354,6 +406,16 @@ export default function ProfilePage() {
                 <h1 className="text-3xl md:text-4xl font-black font-unbounded text-white text-center tracking-tighter mb-2 uppercase">
                   YOUR PROFILE
                 </h1>
+                {userChestNo && (
+                  <div className="mb-2 px-6 py-2 bg-[#BA170D]/20 border-2 border-[#BA170D] rounded-lg">
+                    <p className="text-xs font-black text-white/60 uppercase tracking-widest mb-0.5">
+                      Chest Number
+                    </p>
+                    <p className="text-3xl font-black font-unbounded text-[#BA170D] tracking-tight">
+                      #{userChestNo}
+                    </p>
+                  </div>
+                )}
                 <p className="text-gray-400 mt-1 text-center text-sm md:text-base tracking-wide">
                   Update your details for event registration.
                 </p>
@@ -413,69 +475,78 @@ export default function ProfilePage() {
                   />
                 </div>
 
-                        {/* Department */}
-                        <div>
-                            <label className="block text-[10px] font-black text-[#BA170D] uppercase tracking-[0.2em] mb-3 ml-1">Department <span className="text-red-500">*</span></label>
-                            <div className="grid grid-cols-2 gap-3">
-                                {DEPARTMENTS.map((dept) => (
-                                    <button
-                                        key={dept}
-                                        type="button"
-                                        onClick={() => {
-                                            setFormData({
-                                                ...formData, 
-                                                department: dept,
-                                                semester: "" // Reset semester when department changes
-                                            });
-                                        }}
-                                        className={`p-3 rounded-xl border text-xs md:text-sm font-black tracking-widest transition-all duration-300 ${
-                                            formData.department === dept 
-                                            ? "bg-[#BA170D] text-white border-[#BA170D] shadow-[0_0_20px_rgba(186,23,13,0.3)] scale-[1.02]" 
-                                            : "bg-white/5 text-gray-400 border-white/10 hover:border-white/30 hover:bg-white/10"
-                                        }`}
-                                    >
-                                        {dept}
-                                    </button>
-                                ))}
-                            </div>
-                            {!formData.department && <p className="text-red-500/50 text-[10px] mt-2 ml-1 font-bold tracking-wider">Required</p>}
-                        </div>
-
-                {/* Semester */}
-                        {formData.department && (
-                    <motion.div
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: "auto" }}
-                                className="overflow-hidden"
-                            >
-                      <label className="block text-[10px] font-black text-[#BA170D] uppercase tracking-[0.2em] mb-3 ml-1">
-                    Semester <span className="text-red-500">*</span>
+                {/* Department */}
+                <div>
+                  <label className="block text-[10px] font-black text-[#BA170D] uppercase tracking-[0.2em] mb-3 ml-1">
+                    Department <span className="text-red-500">*</span>
                   </label>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        {(formData.department === "CSE" ? CSE_SEMESTERS : SEMESTERS).map((sem) => (
-                          <button
-                            key={sem}
-                            type="button"
-                            onClick={() =>
-                          setFormData({ ...formData, semester: sem })
-                        }
-                            className={`p-3 rounded-xl border text-[10px] md:text-xs font-black tracking-widest transition-all duration-300 ${
-                              formData.semester === sem
-                                ? "bg-[#BA170D] text-white border-[#BA170D] shadow-[0_0_20px_rgba(186,23,13,0.3)] scale-[1.02]"
-                                : "bg-white/5 text-gray-400 border-white/10 hover:border-white/30 hover:bg-white/10"
-                            }`}
-                          >
-                            {sem}
-                          </button>
-                        ))}
-                      </div>
-                      {!formData.semester && (
+                  <div className="grid grid-cols-2 gap-3">
+                    {DEPARTMENTS.map((dept) => (
+                      <button
+                        key={dept}
+                        type="button"
+                        onClick={() => {
+                          setFormData({
+                            ...formData,
+                            department: dept,
+                            semester: "", // Reset semester when department changes
+                          });
+                        }}
+                        className={`p-3 rounded-xl border text-xs md:text-sm font-black tracking-widest transition-all duration-300 ${
+                          formData.department === dept
+                            ? "bg-[#BA170D] text-white border-[#BA170D] shadow-[0_0_20px_rgba(186,23,13,0.3)] scale-[1.02]"
+                            : "bg-white/5 text-gray-400 border-white/10 hover:border-white/30 hover:bg-white/10"
+                        }`}
+                      >
+                        {dept}
+                      </button>
+                    ))}
+                  </div>
+                  {!formData.department && (
                     <p className="text-red-500/50 text-[10px] mt-2 ml-1 font-bold tracking-wider">
                       Required
                     </p>
                   )}
-                    </motion.div>
-                        )}
+                </div>
+
+                {/* Semester */}
+                {formData.department && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    className="overflow-hidden"
+                  >
+                    <label className="block text-[10px] font-black text-[#BA170D] uppercase tracking-[0.2em] mb-3 ml-1">
+                      Semester <span className="text-red-500">*</span>
+                    </label>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {(formData.department === "CSE"
+                        ? CSE_SEMESTERS
+                        : SEMESTERS
+                      ).map((sem) => (
+                        <button
+                          key={sem}
+                          type="button"
+                          onClick={() =>
+                            setFormData({ ...formData, semester: sem })
+                          }
+                          className={`p-3 rounded-xl border text-[10px] md:text-xs font-black tracking-widest transition-all duration-300 ${
+                            formData.semester === sem
+                              ? "bg-[#BA170D] text-white border-[#BA170D] shadow-[0_0_20px_rgba(186,23,13,0.3)] scale-[1.02]"
+                              : "bg-white/5 text-gray-400 border-white/10 hover:border-white/30 hover:bg-white/10"
+                          }`}
+                        >
+                          {sem}
+                        </button>
+                      ))}
+                    </div>
+                    {!formData.semester && (
+                      <p className="text-red-500/50 text-[10px] mt-2 ml-1 font-bold tracking-wider">
+                        Required
+                      </p>
+                    )}
+                  </motion.div>
+                )}
 
                 {/* House */}
                 <div>
@@ -688,6 +759,16 @@ export default function ProfilePage() {
                                   : "MEMBER"}
                               </span>
                             </div>
+                            {item.team.teamChestNo && (
+                              <div className="text-[10px] text-gray-400 font-medium flex items-center gap-2">
+                                <span className="uppercase tracking-widest text-gray-500">
+                                  Team Chest No:
+                                </span>
+                                <span className="text-[#BA170D] font-black tracking-wide">
+                                  #{item.team.teamChestNo}
+                                </span>
+                              </div>
+                            )}
                             {item.team.teamName && (
                               <div className="text-[10px] text-gray-500 flex items-center gap-2">
                                 <span className="uppercase tracking-widest">
