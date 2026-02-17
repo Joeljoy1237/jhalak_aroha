@@ -262,7 +262,7 @@ export const createTeam = async (
             // 3. ALL WRITES
             // ==========================================
 
-            // A. Update Global User Check Number Counter
+            // A. Update Global User Check Number Counter ok
             if (Object.keys(memberChestNoUpdates).length > 0) {
                 transaction.set(globalCounterRef, { count: currentGlobalCount }, { merge: true });
             }
